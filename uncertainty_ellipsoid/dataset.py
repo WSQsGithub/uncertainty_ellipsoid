@@ -1,0 +1,331 @@
+from pathlib import Path
+from typing import Tuple
+from pydantic import BaseModel
+import typer
+from loguru import logger
+from tqdm import tqdm
+import numpy as np
+import h5py
+from scipy.spatial.transform import Rotation as R
+import multiprocessing as mp
+from functools import partial
+
+from uncertainty_ellipsoid.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+
+app = typer.Typer()
+
+class CameraParameters(BaseModel):
+    """A data model to hold sampled intrinsic and extrinsic parameters."""
+    # Intrinsic parameters
+    f_x: float
+    f_y: float
+    c_x: float
+    c_y: float
+
+    # Extrinsic parameters
+    rx: float
+    ry: float
+    rz: float
+    tx: float
+    ty: float
+    tz: float
+
+class UncertaintySet(BaseModel):
+    # Intrinsic parameters (f_x, f_y)
+    f_x: Tuple[float, float]
+    f_y: Tuple[float, float]
+    
+    # Principal point (c_x, c_y)
+    c_x: Tuple[float, float]
+    c_y: Tuple[float, float]
+    
+    # Rotation (rx, ry, rz)
+    rx: Tuple[float, float]
+    ry: Tuple[float, float]
+    rz: Tuple[float, float]
+    
+    # Translation (tx, ty, tz)
+    tx: Tuple[float, float]
+    ty: Tuple[float, float]
+    tz: Tuple[float, float]
+
+
+# Define the uncertainty range for each parameter (20-tuple)
+class ParameterRange:
+    u_range = (0, 480)
+    v_range = (0, 640)
+    d_range = (0.2, 0.7)
+
+    f_x_range = (595.0, 615.0)
+    f_y_range = (595.0, 615.0)
+
+    # 主点范围 (c_x, c_y): 
+    c_x_range = (290.0, 330.0)
+    c_y_range = (230.0, 270.0)
+
+    # 旋转矩阵 (rx, ry, rz):
+    rx_range = (0.75, 1.75)
+    ry_range = (-1.75, -0.75)
+    rz_range = (0.75, 1.75)
+
+    # 平移向量 (tx, ty, tz):
+    tx_range = (-0.35, 0.25)
+    ty_range = (-0.35, 0.25)
+    tz_range = (-0.25, -0.05)
+
+
+def sample_uncertainty_set() -> UncertaintySet:
+    # Sample a random interval (subset) for each parameter range
+
+    # Intrinsic parameters (f_x, f_y)
+    f_x_min = np.random.uniform(ParameterRange.f_x_range[0], ParameterRange.f_x_range[1] - 1)
+    f_x_max = np.random.uniform(f_x_min + 1, ParameterRange.f_x_range[1])
+    
+    f_y_min = np.random.uniform(ParameterRange.f_y_range[0], ParameterRange.f_y_range[1] - 1)
+    f_y_max = np.random.uniform(f_y_min + 1, ParameterRange.f_y_range[1])
+    
+    # Principal point (c_x, c_y)
+    c_x_min = np.random.uniform(ParameterRange.c_x_range[0], ParameterRange.c_x_range[1] - 1)
+    c_x_max = np.random.uniform(c_x_min + 1, ParameterRange.c_x_range[1])
+    
+    c_y_min = np.random.uniform(ParameterRange.c_y_range[0], ParameterRange.c_y_range[1] - 1)
+    c_y_max = np.random.uniform(c_y_min + 1, ParameterRange.c_y_range[1])
+    
+    # Rotation (rx, ry, rz)
+    rx_min = np.random.uniform(ParameterRange.rx_range[0], ParameterRange.rx_range[1] - 0.1)
+    rx_max = np.random.uniform(rx_min + 0.1, ParameterRange.rx_range[1])
+    
+    ry_min = np.random.uniform(ParameterRange.ry_range[0], ParameterRange.ry_range[1] - 0.1)
+    ry_max = np.random.uniform(ry_min + 0.1, ParameterRange.ry_range[1])
+    
+    rz_min = np.random.uniform(ParameterRange.rz_range[0], ParameterRange.rz_range[1] - 0.1)
+    rz_max = np.random.uniform(rz_min + 0.1, ParameterRange.rz_range[1])
+    
+    # Translation (tx, ty, tz)
+    tx_min = np.random.uniform(ParameterRange.tx_range[0], ParameterRange.tx_range[1] - 0.05)
+    tx_max = np.random.uniform(tx_min + 0.05, ParameterRange.tx_range[1])
+    
+    ty_min = np.random.uniform(ParameterRange.ty_range[0], ParameterRange.ty_range[1] - 0.05)
+    ty_max = np.random.uniform(ty_min + 0.05, ParameterRange.ty_range[1])
+    
+    tz_min = np.random.uniform(ParameterRange.tz_range[0], ParameterRange.tz_range[1] - 0.05)
+    tz_max = np.random.uniform(tz_min + 0.05, ParameterRange.tz_range[1])
+    
+    # Create an instance of the UncertaintySet model
+    uncertainty_set = UncertaintySet(
+        f_x=(f_x_min, f_x_max),
+        f_y=(f_y_min, f_y_max),
+        c_x=(c_x_min, c_x_max),
+        c_y=(c_y_min, c_y_max),
+        rx=(rx_min, rx_max),
+        ry=(ry_min, ry_max),
+        rz=(rz_min, rz_max),
+        tx=(tx_min, tx_max),
+        ty=(ty_min, ty_max),
+        tz=(tz_min, tz_max)
+    )
+
+    return uncertainty_set
+
+
+
+def sample_camera_parameters(uncertainty_set: UncertaintySet) -> CameraParameters:
+    """Samples a set of intrinsic and extrinsic parameters from an UncertaintySet."""
+    
+    # Sample each parameter within its interval
+    f_x = np.random.uniform(*uncertainty_set.f_x)
+    f_y = np.random.uniform(*uncertainty_set.f_y)
+    
+    c_x = np.random.uniform(*uncertainty_set.c_x)
+    c_y = np.random.uniform(*uncertainty_set.c_y)
+    
+    rx = np.random.uniform(*uncertainty_set.rx)
+    ry = np.random.uniform(*uncertainty_set.ry)
+    rz = np.random.uniform(*uncertainty_set.rz)
+    
+    tx = np.random.uniform(*uncertainty_set.tx)
+    ty = np.random.uniform(*uncertainty_set.ty)
+    tz = np.random.uniform(*uncertainty_set.tz)
+    
+    # Create and return a CameraParameters object
+    return CameraParameters(
+        f_x=f_x, f_y=f_y,
+        c_x=c_x, c_y=c_y,
+        rx=rx, ry=ry, rz=rz,
+        tx=tx, ty=ty, tz=tz
+    )
+
+
+def compute_world_coordinates(u: float, v: float, d: float, camera_params: CameraParameters) -> Tuple[float, float, float]:
+    """
+    Compute the world coordinates (X, Y, Z) given pixel coordinates (u, v), depth d,
+    and camera intrinsic & extrinsic parameters.
+    
+    Args:
+        u (float): Pixel x-coordinate.
+        v (float): Pixel y-coordinate.
+        d (float): Depth value.
+        camera_params (CameraParameters): Camera intrinsic and extrinsic parameters.
+    
+    Returns:
+        Tuple[float, float, float]: The computed world coordinates (X, Y, Z).
+    """
+
+    # Compute camera coordinates
+    x_c = (u - camera_params.c_x) * d / camera_params.f_x
+    y_c = (v - camera_params.c_y) * d / camera_params.f_y
+    z_c = d
+
+    # Camera coordinate vector
+    P_c = np.array([x_c, y_c, z_c])
+
+    # Compute the rotation matrix from the rotation vector (rx, ry, rz)
+    rotation_vector = np.array([camera_params.rx, camera_params.ry, camera_params.rz])
+    rotation_matrix = R.from_rotvec(rotation_vector).as_matrix()
+
+    # Compute the translation vector
+    translation_vector = np.array([camera_params.tx, camera_params.ty, camera_params.tz])
+
+    # Transform camera coordinates to world coordinates
+    world_coords = np.dot(rotation_matrix, P_c) + translation_vector
+
+    return tuple(world_coords)
+
+
+def process_batch(batch_idx: int, batch_size: int, M_s: int) -> tuple:
+    """处理一个批次的数据"""
+    world_coords_batch = np.zeros((batch_size, M_s, 3), dtype=np.float32)
+    pixel_coords_batch = np.zeros((batch_size, 2), dtype=np.float32)
+    depths_batch = np.zeros(batch_size, dtype=np.float32)
+    uncertainty_sets_batch = np.zeros((batch_size, 20), dtype=np.float32)
+    
+    for i in range(batch_size):
+        # 采样参数不确定性集
+        uncertainty_set = sample_uncertainty_set()
+        
+        # 随机采样像素坐标
+        u = np.random.uniform(*ParameterRange.u_range)
+        v = np.random.uniform(*ParameterRange.v_range)
+        
+        # 采样深度
+        d = np.random.uniform(*ParameterRange.d_range)
+        
+        # 生成蒙特卡洛样本
+        world_coords = np.array([
+            compute_world_coordinates(u, v, d, sample_camera_parameters(uncertainty_set))
+            for _ in range(M_s)
+        ])
+        
+        # 存储数据
+        world_coords_batch[i] = world_coords
+        pixel_coords_batch[i] = [u, v]
+        depths_batch[i] = d
+        
+        # 展平uncertainty_set
+        flattened_uncertainty = np.array([
+            value for interval in uncertainty_set.dict().values() 
+            for value in interval
+        ])
+        uncertainty_sets_batch[i] = flattened_uncertainty
+    
+    return (
+        batch_idx,
+        world_coords_batch,
+        pixel_coords_batch,
+        depths_batch,
+        uncertainty_sets_batch
+    )
+
+@app.command()
+def main(
+    input_path: Path = RAW_DATA_DIR / "dataset.csv",
+    output_path: Path = PROCESSED_DATA_DIR / "dataset.h5",
+    num_samples: int = int(1e6),
+    M_s: int = 100,
+    batch_size: int = 1000,  # 每个批次的样本数
+    num_processes: int = mp.cpu_count()  # 使用CPU核心数
+):
+    """
+    Generate a dataset by sampling intrinsic and extrinsic camera parameters,
+    computing world coordinates, and storing the results in HDF5 format.
+    """
+    logger.info("开始处理数据集...")
+    logger.info(f"使用 {num_processes} 个进程进行并行处理")
+    
+    # 计算批次数
+    num_batches = (num_samples + batch_size - 1) // batch_size
+    
+    # 创建HDF5文件和数据集
+    with h5py.File(output_path, "w") as f:
+        # Create datasets
+        world_coords_dset = f.create_dataset(
+            "world_coordinates", 
+            shape=(num_samples, M_s, 3), 
+            dtype=np.float32,
+            chunks=True,  # 启用分块存储
+            compression="gzip",
+            compression_opts=4
+        )
+        pixel_coords_dset = f.create_dataset(
+            "pixel_coordinates", 
+            shape=(num_samples, 2), 
+            dtype=np.float32,
+            chunks=True,
+            compression="gzip",
+            compression_opts=4
+        )
+        depths_dset = f.create_dataset(
+            "depths", 
+            shape=(num_samples,), 
+            dtype=np.float32,
+            chunks=True,
+            compression="gzip",
+            compression_opts=4
+        )
+        uncertainty_set_dset = f.create_dataset(
+            "uncertainty_sets", 
+            shape=(num_samples, 20), 
+            dtype=np.float32,
+            chunks=True,
+            compression="gzip",
+            compression_opts=4
+        )
+        
+        # 创建进程池
+        with mp.Pool(num_processes) as pool:
+            # 准备并行处理的参数
+            process_func = partial(
+                process_batch,
+                batch_size=batch_size,
+                M_s=M_s
+            )
+            
+            # 使用tqdm显示进度
+            results = []
+            for result in tqdm(
+                pool.imap_unordered(process_func, range(num_batches)),
+                total=num_batches,
+                desc="生成数据集"
+            ):
+                batch_idx, world_coords, pixel_coords, depths, uncertainty_sets = result
+                
+                # 计算实际的批次大小（最后一个批次可能较小）
+                start_idx = batch_idx * batch_size
+                end_idx = min(start_idx + batch_size, num_samples)
+                actual_batch_size = end_idx - start_idx
+                
+                # 写入数据
+                world_coords_dset[start_idx:end_idx] = world_coords[:actual_batch_size]
+                pixel_coords_dset[start_idx:end_idx] = pixel_coords[:actual_batch_size]
+                depths_dset[start_idx:end_idx] = depths[:actual_batch_size]
+                uncertainty_set_dset[start_idx:end_idx] = uncertainty_sets[:actual_batch_size]
+                
+                # 定期刷新缓存
+                f.flush()
+    
+    logger.success("数据集处理完成！")
+
+if __name__ == "__main__":
+    # 设置随机种子确保可重复性
+    np.random.seed(42)
+    app()
