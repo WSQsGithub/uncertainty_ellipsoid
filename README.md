@@ -174,7 +174,7 @@ The neural network will have the following architecture:
     ```python
     outputs = (
     c_x, c_y, c_z,  # 3 for the center of the ellipsoid
-    l_11, l_12, l_13, l_22, l_23, l_33  # 6 for the upper triangular elements of the precision matrix
+    l_11, l_21, l_31, l_22, l_32, l_33  # 6 for the lower triangular elements of the precision matrix
     )
     ```
 
