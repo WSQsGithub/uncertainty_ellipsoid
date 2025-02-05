@@ -5,6 +5,7 @@ isort
 jupyterlab
 loguru
 matplotlib
+plotly
 mkdocs
 notebook
 numpy

@@ -9,8 +9,93 @@ import h5py
 from scipy.spatial.transform import Rotation as R
 import multiprocessing as mp
 from functools import partial
+import torch
+from torch.utils.data import DataLoader, Dataset
 
 from uncertainty_ellipsoid.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+import h5py
+import torch
+from torch.utils.data import Dataset, DataLoader
+from pathlib import Path
+
+class UncertaintyEllipsoidDataset(Dataset):
+    """不确定性椭球数据集类"""
+    def __init__(self, h5_path: Path, transform=None):
+        """
+        初始化数据集
+        
+        Args:
+            h5_path (Path): HDF5数据文件路径
+            transform (callable, optional): 数据转换函数
+        """
+        self.h5_path = h5_path
+        self.transform = transform
+        
+        # 打开HDF5文件
+        self.file = h5py.File(h5_path, 'r')
+        
+        # 预先加载数据集的大小信息
+        self.num_samples = self.file['world_coordinates'].shape[0]
+        self.M_s = self.file['world_coordinates'].shape[1]
+    
+    def __len__(self):
+        return self.num_samples
+    
+    def __getitem__(self, idx):
+        """获取单个数据样本"""
+        # 读取数据
+        world_coords = self.file['world_coordinates'][idx]  # shape: (M_s, 3)
+        pixel_coords = self.file['pixel_coordinates'][idx]  # shape: (2,)
+        depth = self.file['depths'][idx]                    # shape: ()
+        uncertainty_set = self.file['uncertainty_sets'][idx]  # shape: (20,)
+        
+        # 转换为torch张量
+        sample = {
+            'world_coordinates': torch.from_numpy(world_coords).float(),
+            'pixel_coordinates': torch.from_numpy(pixel_coords).float(),
+            'depth': torch.tensor(depth).float(),
+            'uncertainty_set': torch.from_numpy(uncertainty_set).float()
+        }
+        
+        if self.transform:
+            sample = self.transform(sample)
+                
+        return sample
+    
+    def __del__(self):
+        """在数据集被销毁时关闭HDF5文件"""
+        self.file.close()
+
+def get_dataloader(
+    h5_path: Path,
+    batch_size: int = 32,
+    shuffle: bool = True,
+    num_workers: int = 4,
+    transform=None
+) -> DataLoader:
+    """
+    创建数据加载器
+    
+    Args:
+        h5_path (Path): HDF5数据文件路径
+        batch_size (int): 批次大小
+        shuffle (bool): 是否打乱数据
+        num_workers (int): 数据加载的工作进程数
+        transform (callable, optional): 数据转换函数
+    
+    Returns:
+        DataLoader: PyTorch数据加载器
+    """
+    dataset = UncertaintyEllipsoidDataset(h5_path, transform=transform)
+    
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=torch.cuda.is_available(),  # 如果使用GPU，启用pin_memory
+    )
+
 
 app = typer.Typer()
 
