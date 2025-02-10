@@ -62,6 +62,10 @@ create_environment:
 data: requirements
 	$(PYTHON_INTERPRETER) uncertainty_ellipsoid/dataset.py
 
+## Generate Features (split train/test)
+.PHONY: features
+features: 
+	$(PYTHON_INTERPRETER) uncertainty_ellipsoid/features.py
 
 ## Make Train
 .PHONY: train
