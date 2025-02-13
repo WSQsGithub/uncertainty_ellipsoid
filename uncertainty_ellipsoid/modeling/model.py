@@ -57,19 +57,19 @@ class EllipsoidNet(nn.Module):
 
 
 def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
-    """安全加载模型，自动处理缺失权重的情况"""
+    """Safely load model, automatically handle missing weights"""
     model = EllipsoidNet()
 
     try:
-        # 尝试加载预训练权重
+        # Try to load pretrained weights
         state_dict = torch.load(model_path, map_location=device)
         model.load_state_dict(state_dict)
-        logger.info(f"成功加载模型权重: {model_path}")
+        logger.info(f"Successfully loaded model weights: {model_path}")
     except FileNotFoundError:
-        logger.warning("未找到预训练权重，使用随机初始化模型")
-        # 保持默认随机初始化
+        logger.warning("Pretrained weights not found, using random initialization")
+        # Keep default random initialization
     except Exception as e:
-        logger.error(f"加载模型出错: {str(e)}")
+        logger.error(f"Error loading model: {str(e)}")
         raise
 
     model.to(device)
