@@ -29,7 +29,7 @@ class FeatureCombiner:
         # 将特征和标签组合为输入张量
         feature_tensor = torch.cat([pixel_coordinates, depths.unsqueeze(-1), uncertainty_set])
 
-        sample['feature'] = feature_tensor
+        sample["feature"] = feature_tensor
 
         return sample
 
@@ -53,8 +53,8 @@ class UncertaintyEllipsoidDataset(Dataset):
         self.file = h5pickle.File(str(h5_path), "r")
 
         # 预先加载数据集的大小信息
-        self.num_samples = self.file["world_coordinates"].shape[0] # 样本数
-        self.M_s = self.file["world_coordinates"].shape[1] # MC采样数
+        self.num_samples = self.file["world_coordinates"].shape[0]  # 样本数
+        self.M_s = self.file["world_coordinates"].shape[1]  # MC采样数
 
     def __len__(self):
         return self.num_samples
@@ -79,7 +79,6 @@ class UncertaintyEllipsoidDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-
 
 
 def get_dataloader(

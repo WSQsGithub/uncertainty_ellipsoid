@@ -5,7 +5,6 @@ from loguru import logger
 from pathlib import Path
 
 
-
 class EllipsoidNet(nn.Module):
     def __init__(self):
         super(EllipsoidNet, self).__init__()
@@ -54,12 +53,12 @@ class EllipsoidNet(nn.Module):
 
         # 返回中心和 L 矩阵
         return center, L
-    
-    
+
+
 def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
     """安全加载模型，自动处理缺失权重的情况"""
     model = EllipsoidNet()
-    
+
     try:
         # 尝试加载预训练权重
         state_dict = torch.load(model_path, map_location=device)
@@ -71,10 +70,11 @@ def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
     except Exception as e:
         logger.error(f"加载模型出错: {str(e)}")
         raise
-    
+
     model.to(device)
     model.eval()
     return model
+
 
 if __name__ == "__main__":
     # 创建模型实例
