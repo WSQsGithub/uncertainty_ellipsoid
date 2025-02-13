@@ -16,10 +16,27 @@ from tqdm import tqdm
 from uncertainty_ellipsoid.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 
+class FeatureCombiner:
+    """数据转换类，将特征和标签组合为输入张量"""
+
+    def __call__(self, sample):
+        # 从样本中提取特征和标签
+        pixel_coordinates = sample["pixel_coordinates"]
+        depths = sample["depth"]
+        uncertainty_set = sample["uncertainty_set"]
+
+        # 将特征和标签组合为输入张量
+        feature_tensor = torch.cat([pixel_coordinates, depths.unsqueeze(-1), uncertainty_set])
+
+        sample['feature'] = feature_tensor
+
+        return sample
+
+
 class UncertaintyEllipsoidDataset(Dataset):
     """不确定性椭球数据集类"""
 
-    def __init__(self, h5_path: Path, transform=None):
+    def __init__(self, h5_path: Path, transform=FeatureCombiner):
         """
         初始化数据集
 
