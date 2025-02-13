@@ -28,7 +28,7 @@ class EllipsoidNet(nn.Module):
         c_x, c_y, c_z, l_11, l_21, l_31, l_22, l_32, l_33 = torch.chunk(outputs, 9, dim=-1)
 
         # 将中心 c_x, c_y, c_z 合并为一个 3D 向量
-        center = torch.stack((c_x, c_y, c_z), dim=-1)
+        center = torch.stack((c_x, c_y, c_z), dim=-1).squeeze(1)
 
         # 使精度矩阵的下三角元素为正，使用 softplus 保证正数
         l_11 = F.softplus(l_11)  # 保证 l_11 为正
@@ -89,5 +89,5 @@ if __name__ == "__main__":
 
     # 获取输出 center 和 L
     center, L = model(sample_input)
-    print("center shape:", center.shape)  # (batch_size, 1, 3)
+    print("center shape:", center.shape)  # (batch_size, 3)
     print("L shape:", L.shape)  # (batch_size, 3, 3)

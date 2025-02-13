@@ -59,7 +59,7 @@ def main(
             # 模型推理
             centers, L_elements = model(inputs)
             # 将 centers 和 L_elements 从 GPU 转到 CPU，并转换为 numpy 数组
-            centers = centers.squeeze(1).cpu().numpy()  # (batch_size, 3)
+            centers = centers.cpu().numpy()  # (batch_size, 3)
             L_elements = L_elements.cpu().numpy()  # (batch_size, 3, 3)
 
             # 将结果存储到字典中
