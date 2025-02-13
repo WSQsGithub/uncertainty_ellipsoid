@@ -97,7 +97,7 @@ def main(
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item()/1000
+            running_loss += loss.item() / 1000
 
             pbar.update(len(inputs))
 

@@ -1,7 +1,6 @@
-from contextlib import asynccontextmanager
-from pathlib import Path
-from typing import List
 import time
+from contextlib import asynccontextmanager
+from typing import List
 
 import numpy as np
 import torch
@@ -24,7 +23,7 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for FastAPI application"""
     # Startup
     global model, device
-    
+
     # Initialize device
     if torch.backends.mps.is_available():
         device = torch.device("mps")
@@ -32,7 +31,7 @@ async def lifespan(app: FastAPI):
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    
+
     logger.info(f"Using device: {device}")
 
     # Load model
@@ -40,18 +39,15 @@ async def lifespan(app: FastAPI):
     model = safe_load_model(model_path, device)
     model.eval()
     logger.info("Model loaded successfully")
-    
+
     yield
-    
+
     # Cleanup (if needed)
     # Add any cleanup code here
 
 
 # Initialize FastAPI app with lifespan
-app = FastAPI(
-    title="Uncertainty Ellipsoid API",
-    lifespan=lifespan
-)
+app = FastAPI(title="Uncertainty Ellipsoid API", lifespan=lifespan)
 
 
 class PredictionInput(BaseModel):
@@ -59,18 +55,18 @@ class PredictionInput(BaseModel):
     depth: float = Field(..., gt=0)
     uncertainty_set: List[float] = Field(..., min_items=20, max_items=20)
 
-    @field_validator('pixel_coordinates')
+    @field_validator("pixel_coordinates")
     def validate_pixel_coordinates(cls, v):
         if len(v) != 2:
-            raise ValueError('pixel_coordinates must have exactly 2 elements')
+            raise ValueError("pixel_coordinates must have exactly 2 elements")
         if not (0 <= v[0] <= 480 and 0 <= v[1] <= 640):
-            raise ValueError('pixel_coordinates must be within valid range')
+            raise ValueError("pixel_coordinates must be within valid range")
         return v
 
-    @field_validator('depth')
+    @field_validator("depth")
     def validate_depth(cls, v):
         if not (0.2 <= v <= 0.7):
-            raise ValueError('depth must be between 0.2 and 0.7')
+            raise ValueError("depth must be between 0.2 and 0.7")
         return v
 
 
@@ -101,7 +97,7 @@ async def predict(input_data: PredictionInput):
     # Make prediction
     with torch.no_grad():
         centers, L_elements = model(feature)
-        
+
         # Convert to numpy for response
         center = centers[0].cpu().numpy().tolist()
         L_matrix = L_elements[0].cpu().numpy().tolist()
@@ -113,15 +109,10 @@ async def predict(input_data: PredictionInput):
     prediction_time = (time.perf_counter() - start_time) * 1000  # Convert to milliseconds
     logger.info(f"Prediction time: {prediction_time:.2f} ms")
 
-    return PredictionOutput(
-        center=center,
-        L_matrix=L_matrix,
-        time_ms=prediction_time
-    )
+    return PredictionOutput(center=center, L_matrix=L_matrix, time_ms=prediction_time)
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
-

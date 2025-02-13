@@ -18,7 +18,12 @@ from uncertainty_ellipsoid.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 
 def get_dataloader(
-    h5_path: Path, batch_size: int = 32, shuffle: bool = True, num_workers: int = 4, transform=None, sampler=None
+    h5_path: Path,
+    batch_size: int = 32,
+    shuffle: bool = True,
+    num_workers: int = 4,
+    transform=None,
+    sampler=None,
 ) -> DataLoader:
     """
     创建数据加载器
@@ -44,6 +49,7 @@ def get_dataloader(
         drop_last=True,  # 丢弃最后一个不完整的批次
         sampler=sampler,
     )
+
 
 class FeatureCombiner:
     """数据转换类，将特征和标签组合为输入张量"""
@@ -107,6 +113,7 @@ class UncertaintyEllipsoidDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
+
 
 app = typer.Typer()
 

@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from uncertainty_ellipsoid.config import MODELS_DIR, PROCESSED_DATA_DIR
 from uncertainty_ellipsoid.dataset import FeatureCombiner, get_dataloader
-from uncertainty_ellipsoid.modeling.model import safe_load_model
 from uncertainty_ellipsoid.modeling.loss import UncertaintyEllipsoidLoss
+from uncertainty_ellipsoid.modeling.model import safe_load_model
 
 app = typer.Typer()
 
