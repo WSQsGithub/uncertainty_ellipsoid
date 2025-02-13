@@ -16,4 +16,6 @@ scikit-learn
 tqdm
 typer
 h5py
+h5pickle
+tensorboard
 -e .

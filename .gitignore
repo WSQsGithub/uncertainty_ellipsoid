@@ -173,3 +173,6 @@ cython_debug/
 
 # Cursor rules
 .cursorrules
+
+# Tensorboard runs
+runs/
