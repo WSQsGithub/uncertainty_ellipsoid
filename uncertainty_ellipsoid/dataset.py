@@ -90,7 +90,8 @@ class FeatureCombiner:
                     ParameterRange.ty_range[0],
                     ParameterRange.tz_range[0],
                     ParameterRange.tz_range[0],
-                ], dtype=np.float32
+                ],
+                dtype=np.float32,
             )
         ) / np.array(
             [
@@ -114,7 +115,8 @@ class FeatureCombiner:
                 ParameterRange.ty_range[1] - ParameterRange.ty_range[0],
                 ParameterRange.tz_range[1] - ParameterRange.tz_range[0],
                 ParameterRange.tz_range[1] - ParameterRange.tz_range[0],
-            ], dtype=np.float32
+            ],
+            dtype=np.float32,
         )
 
         # 将特征和标签组合为输入张量
