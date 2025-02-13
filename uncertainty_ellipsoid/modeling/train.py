@@ -19,7 +19,7 @@ app = typer.Typer()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "train_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_net.pth",
+    model_path: Path = MODELS_DIR / "ellipsoid_net_top1.pth",
     batch_size: int = 64,
     device: str = "auto", # auto-detect MPS, CUDA or CPU
     # -----------------------------------------
@@ -96,8 +96,36 @@ def main(
         avg_loss = running_loss / len(dataloader)
         logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
-    # Save the trained model
-    torch.save(model.state_dict(), MODELS_DIR / f"ellipsoid_net_{epoch}.pth")
+        # Check if the model is one of the top 3 best models
+        if epoch < 3:
+            torch.save(model.state_dict(), MODELS_DIR / f"ellipsoid_net_top{epoch}.pth")
+        else:
+            # Check if the current model is better than the worst top 3 model
+            top_models = sorted(MODELS_DIR.glob("ellipsoid_net_top*.pth"), key=lambda x: x.stat().st_mtime)
+            worst_top_model = top_models[0]
+            worst_top_model_loss = float("inf")
+            for top_model in top_models:
+                model = safe_load_model(top_model, device)
+                model.eval()
+                running_loss = 0.0
+                with torch.no_grad():
+                    for batch in dataloader:
+                        inputs = batch["feature"].to(device, non_blocking=True)
+                        targets = batch["world_coordinates"].to(device, non_blocking=True)
+
+                        centers, L_elements = model(inputs)
+                        loss = criterion(targets, centers, L_elements)
+
+                        running_loss += loss.item()
+
+                avg_loss = running_loss / len(dataloader)
+                if avg_loss < worst_top_model_loss:
+                    worst_top_model = top_model
+                    worst_top_model_loss = avg_loss
+
+            # Replace the worst top model with the current model
+            if avg_loss < worst_top_model_loss:
+                torch.save(model.state_dict(), worst_top_model)
 
     logger.info("Training complete!")
 
