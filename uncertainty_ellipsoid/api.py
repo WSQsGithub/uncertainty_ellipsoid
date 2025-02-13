@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List
+import time
 
 import numpy as np
 import torch
@@ -76,6 +77,7 @@ class PredictionInput(BaseModel):
 class PredictionOutput(BaseModel):
     center: List[float]
     L_matrix: List[List[float]]
+    time_ms: float = None
 
 
 @app.post("/predict", response_model=PredictionOutput)
@@ -83,6 +85,8 @@ async def predict(input_data: PredictionInput):
     """
     Predict uncertainty ellipsoid for given input
     """
+    start_time = time.perf_counter()
+
     # Convert input to tensors
     sample = {
         "pixel_coordinates": torch.tensor(input_data.pixel_coordinates).float(),
@@ -106,11 +110,13 @@ async def predict(input_data: PredictionInput):
         center = np.nan_to_num(center, nan=0.0).tolist()
         L_matrix = np.nan_to_num(L_matrix, nan=0.0).tolist()
 
-
+    prediction_time = (time.perf_counter() - start_time) * 1000  # Convert to milliseconds
+    logger.info(f"Prediction time: {prediction_time:.2f} ms")
 
     return PredictionOutput(
         center=center,
-        L_matrix=L_matrix
+        L_matrix=L_matrix,
+        time_ms=prediction_time
     )
 
 
