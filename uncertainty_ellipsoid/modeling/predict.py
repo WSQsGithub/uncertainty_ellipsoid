@@ -10,6 +10,7 @@ from tqdm import tqdm
 from uncertainty_ellipsoid.config import MODELS_DIR, PROCESSED_DATA_DIR
 from uncertainty_ellipsoid.dataset import FeatureCombiner, get_dataloader
 from uncertainty_ellipsoid.modeling.model import safe_load_model
+from uncertainty_ellipsoid.modeling.loss import UncertaintyEllipsoidLoss
 
 app = typer.Typer()
 
@@ -63,15 +64,21 @@ def main(
         logger.info(f"Using {torch.cuda.device_count()} GPUs!")
         model = torch.nn.DataParallel(model)
 
+    criterion = UncertaintyEllipsoidLoss()
+
     # 执行预测
     logger.info("Starting prediction...")
     predictions = []
+    running_loss = 0.0
     with torch.no_grad(), tqdm(total=len(dataloader.dataset), desc="预测进度") as pbar:
         for batch in dataloader:
             inputs = batch["feature"].to(device, non_blocking=True)
+            targets = batch["world_coordinates"].to(device, non_blocking=True)
 
             # 模型推理
             centers, L_elements = model(inputs)
+            loss = criterion(targets, centers, L_elements)
+
             # 将 centers 和 L_elements 从 GPU 转到 CPU，并转换为 numpy 数组
             centers = centers.cpu().numpy()  # (batch_size, 3)
             L_elements = L_elements.cpu().numpy()  # (batch_size, 3, 3)
@@ -89,13 +96,15 @@ def main(
                 "L33": L_elements[:, 2, 2],
             }
 
+            running_loss += loss.item()
             predictions.append(pd.DataFrame(batch_results))
             pbar.update(len(inputs))
 
+    avg_loss = running_loss / len(dataloader)
     # 保存结果
     full_df = pd.concat(predictions, ignore_index=True)
     full_df.to_csv(predictions_path, index=False)
-    logger.success(f"预测结果已保存至: {predictions_path}")
+    logger.success(f"预测结果已保存至: {predictions_path}, 平均损失: {avg_loss:.4f}")
 
 
 if __name__ == "__main__":

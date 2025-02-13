@@ -17,6 +17,34 @@ from tqdm import tqdm
 from uncertainty_ellipsoid.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 
 
+def get_dataloader(
+    h5_path: Path, batch_size: int = 32, shuffle: bool = True, num_workers: int = 4, transform=None, sampler=None
+) -> DataLoader:
+    """
+    创建数据加载器
+
+    Args:
+        h5_path (Path): HDF5数据文件路径
+        batch_size (int): 批次大小
+        shuffle (bool): 是否打乱数据
+        num_workers (int): 数据加载的工作进程数
+        transform (callable, optional): 数据转换函数
+
+    Returns:
+        DataLoader: PyTorch数据加载器
+    """
+    dataset = UncertaintyEllipsoidDataset(h5_path, transform=transform)
+
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=torch.cuda.is_available(),  # 如果使用GPU，启用pin_memory
+        drop_last=True,  # 丢弃最后一个不完整的批次
+        sampler=sampler,
+    )
+
 class FeatureCombiner:
     """数据转换类，将特征和标签组合为输入张量"""
 
@@ -79,35 +107,6 @@ class UncertaintyEllipsoidDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
-
-
-def get_dataloader(
-    h5_path: Path, batch_size: int = 32, shuffle: bool = True, num_workers: int = 4, transform=None
-) -> DataLoader:
-    """
-    创建数据加载器
-
-    Args:
-        h5_path (Path): HDF5数据文件路径
-        batch_size (int): 批次大小
-        shuffle (bool): 是否打乱数据
-        num_workers (int): 数据加载的工作进程数
-        transform (callable, optional): 数据转换函数
-
-    Returns:
-        DataLoader: PyTorch数据加载器
-    """
-    dataset = UncertaintyEllipsoidDataset(h5_path, transform=transform)
-
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        pin_memory=torch.cuda.is_available(),  # 如果使用GPU，启用pin_memory
-        drop_last=True,  # 丢弃最后一个不完整的批次
-    )
-
 
 app = typer.Typer()
 
