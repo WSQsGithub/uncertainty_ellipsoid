@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import platform
 import pandas as pd
 import torch
 import typer
@@ -19,7 +20,7 @@ def main(
     model_path: Path = MODELS_DIR / "ellipsoid_net.pth",
     predictions_path: Path = PROCESSED_DATA_DIR / "predictions.csv",
     batch_size: int = 64,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto",
 ):
     """
     执行模型预测，自动处理模型初始化
@@ -32,6 +33,14 @@ def main(
         device: 计算设备 (cuda/cpu)
     """
     # 初始化设备
+    if device == "auto":
+        if platform.system() == "Darwin" and torch.backends.mps.is_available():
+            device = "mps"
+        elif torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
+            
     device = torch.device(device)
     logger.info(f"使用计算设备: {device}")
 

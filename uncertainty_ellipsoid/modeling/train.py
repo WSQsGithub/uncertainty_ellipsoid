@@ -5,6 +5,7 @@ import torch
 import typer
 from loguru import logger
 from tqdm import tqdm
+import platform
 
 from uncertainty_ellipsoid.config import MODELS_DIR, PROCESSED_DATA_DIR
 from uncertainty_ellipsoid.dataset import FeatureCombiner, get_dataloader
@@ -20,7 +21,7 @@ def main(
     features_path: Path = PROCESSED_DATA_DIR / "train_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net.pth",
     batch_size: int = 64,
-    device: str = "cuda" if torch.cuda.is_available() else "cpu",
+    device: str = "auto", # auto-detect MPS, CUDA or CPU
     # -----------------------------------------
 ):
     """
@@ -33,6 +34,14 @@ def main(
         device: Compute device (cuda/cpu)
     """
     # Initialize device
+    if device == "auto":
+        if platform.system() == "Darwin" and torch.backends.mps.is_available():
+            device = "mps"
+        elif torch.cuda.is_available():
+            device = "cuda"
+        else:
+            device = "cpu"
+
     device = torch.device(device)
     logger.info(f"Using compute device: {device}")
 
