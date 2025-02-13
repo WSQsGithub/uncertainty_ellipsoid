@@ -57,11 +57,68 @@ class FeatureCombiner:
     def __call__(self, sample):
         # 从样本中提取特征和标签
         pixel_coordinates = sample["pixel_coordinates"]
-        depths = sample["depth"]
+        depth = sample["depth"]
         uncertainty_set = sample["uncertainty_set"]
 
+        # 归一化
+        pixel_coordinates /= ParameterRange.u_range[1]
+        depth = (depth - ParameterRange.d_range[0]) / (
+            ParameterRange.d_range[1] - ParameterRange.d_range[0]
+        )
+
+        uncertainty_set = (
+            uncertainty_set
+            - np.array(
+                [
+                    ParameterRange.f_x_range[0],
+                    ParameterRange.f_x_range[0],
+                    ParameterRange.f_y_range[0],
+                    ParameterRange.f_y_range[0],
+                    ParameterRange.c_x_range[0],
+                    ParameterRange.c_x_range[0],
+                    ParameterRange.c_y_range[0],
+                    ParameterRange.c_y_range[0],
+                    ParameterRange.rx_range[0],
+                    ParameterRange.rx_range[0],
+                    ParameterRange.ry_range[0],
+                    ParameterRange.ry_range[0],
+                    ParameterRange.rz_range[0],
+                    ParameterRange.rz_range[0],
+                    ParameterRange.tx_range[0],
+                    ParameterRange.tx_range[0],
+                    ParameterRange.ty_range[0],
+                    ParameterRange.ty_range[0],
+                    ParameterRange.tz_range[0],
+                    ParameterRange.tz_range[0],
+                ], dtype=np.float32
+            )
+        ) / np.array(
+            [
+                ParameterRange.f_x_range[1] - ParameterRange.f_x_range[0],
+                ParameterRange.f_x_range[1] - ParameterRange.f_x_range[0],
+                ParameterRange.f_y_range[1] - ParameterRange.f_y_range[0],
+                ParameterRange.f_y_range[1] - ParameterRange.f_y_range[0],
+                ParameterRange.c_x_range[1] - ParameterRange.c_x_range[0],
+                ParameterRange.c_x_range[1] - ParameterRange.c_x_range[0],
+                ParameterRange.c_y_range[1] - ParameterRange.c_y_range[0],
+                ParameterRange.c_y_range[1] - ParameterRange.c_y_range[0],
+                ParameterRange.rx_range[1] - ParameterRange.rx_range[0],
+                ParameterRange.rx_range[1] - ParameterRange.rx_range[0],
+                ParameterRange.ry_range[1] - ParameterRange.ry_range[0],
+                ParameterRange.ry_range[1] - ParameterRange.ry_range[0],
+                ParameterRange.rz_range[1] - ParameterRange.rz_range[0],
+                ParameterRange.rz_range[1] - ParameterRange.rz_range[0],
+                ParameterRange.tx_range[1] - ParameterRange.tx_range[0],
+                ParameterRange.tx_range[1] - ParameterRange.tx_range[0],
+                ParameterRange.ty_range[1] - ParameterRange.ty_range[0],
+                ParameterRange.ty_range[1] - ParameterRange.ty_range[0],
+                ParameterRange.tz_range[1] - ParameterRange.tz_range[0],
+                ParameterRange.tz_range[1] - ParameterRange.tz_range[0],
+            ], dtype=np.float32
+        )
+
         # 将特征和标签组合为输入张量
-        feature_tensor = torch.cat([pixel_coordinates, depths.unsqueeze(-1), uncertainty_set])
+        feature_tensor = torch.cat([pixel_coordinates, depth.unsqueeze(-1), uncertainty_set])
 
         sample["feature"] = feature_tensor
 
@@ -158,8 +215,8 @@ class UncertaintySet(BaseModel):
 
 # Define the uncertainty range for each parameter (20-tuple)
 class ParameterRange:
-    u_range = (0, 480)
-    v_range = (0, 640)
+    u_range = (0.0, 480.0)
+    v_range = (0.0, 640.0)
     d_range = (0.2, 0.7)
 
     f_x_range = (595.0, 615.0)
