@@ -58,6 +58,11 @@ def main(
     logger.info(f"Safe loading model from {model_path} to {device}")
     model = safe_load_model(model_path, device)
 
+    # If using multiple GPUs, use DataParallel
+    if torch.cuda.device_count() > 1:
+        logger.info(f"Using {torch.cuda.device_count()} GPUs!")
+        model = torch.nn.DataParallel(model)
+
     # 执行预测
     logger.info("Starting prediction...")
     predictions = []

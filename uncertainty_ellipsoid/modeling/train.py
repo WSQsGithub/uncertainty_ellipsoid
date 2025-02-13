@@ -59,6 +59,11 @@ def main(
     logger.info(f"Safe loading model from {model_path} to {device}")
     model = safe_load_model(model_path, device)
 
+    # If using multiple GPUs, use DataParallel
+    if torch.cuda.device_count() > 1:
+        logger.info(f"Using {torch.cuda.device_count()} GPUs!")
+        model = torch.nn.DataParallel(model)
+
     # Initialize optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
@@ -92,11 +97,11 @@ def main(
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item()
+            running_loss += loss.item()/1000
 
             pbar.update(len(inputs))
 
-        avg_loss = running_loss / len(dataloader)
+        avg_loss = running_loss / len(dataloader) * 1000
         logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
         # Write loss to TensorBoard

@@ -176,3 +176,6 @@ cython_debug/
 
 # Tensorboard runs
 runs/
+
+# Models
+models/
