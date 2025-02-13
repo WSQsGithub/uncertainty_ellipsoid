@@ -57,19 +57,23 @@ def main(
             
             # 模型推理
             centers, L_elements = model(inputs)
-            
-            # 转换到CPU
+            # 将 centers 和 L_elements 从 GPU 转到 CPU，并转换为 numpy 数组
+            centers = centers.squeeze(1).cpu().numpy()  # (batch_size, 3)
+            L_elements = L_elements.cpu().numpy()  # (batch_size, 3, 3)
+
+            # 将结果存储到字典中
             batch_results = {
-                "center_x": centers[:, 0].cpu().numpy(),
-                "center_y": centers[:, 1].cpu().numpy(),
-                "center_z": centers[:, 2].cpu().numpy(),
-                "L11": L_elements[:, 0, 0].cpu().numpy(),
-                "L21": L_elements[:, 1, 0].cpu().numpy(),
-                "L31": L_elements[:, 2, 0].cpu().numpy(),
-                "L22": L_elements[:, 1, 1].cpu().numpy(),
-                "L32": L_elements[:, 2, 1].cpu().numpy(),
-                "L33": L_elements[:, 2, 2].cpu().numpy(),
+                "center_x": centers[:, 0],
+                "center_y": centers[:, 1],
+                "center_z": centers[:, 2],
+                "L11": L_elements[:, 0, 0],
+                "L21": L_elements[:, 1, 0],
+                "L31": L_elements[:, 2, 0],
+                "L22": L_elements[:, 1, 1],
+                "L32": L_elements[:, 2, 1],
+                "L33": L_elements[:, 2, 2],
             }
+            
             predictions.append(pd.DataFrame(batch_results))
             pbar.update(len(inputs))
     
