@@ -3,8 +3,8 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple
 
-import h5py
 import h5pickle
+import h5py
 import numpy as np
 import torch
 import typer

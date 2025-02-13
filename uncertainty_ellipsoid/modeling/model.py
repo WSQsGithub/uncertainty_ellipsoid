@@ -1,8 +1,9 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from loguru import logger
-from pathlib import Path
 
 
 class EllipsoidNet(nn.Module):

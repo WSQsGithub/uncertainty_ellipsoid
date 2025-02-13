@@ -37,6 +37,7 @@ lint:
 .PHONY: format
 format:
 	black --config pyproject.toml uncertainty_ellipsoid
+	isort --profile black uncertainty_ellipsoid
 
 
 

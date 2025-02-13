@@ -1,6 +1,7 @@
 from pathlib import Path
-import torch
+
 import pandas as pd
+import torch
 import typer
 from loguru import logger
 from tqdm import tqdm
