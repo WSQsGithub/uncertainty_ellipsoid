@@ -53,7 +53,7 @@ def main(
     predictions = []
     with torch.no_grad(), tqdm(total=len(dataloader.dataset), desc="预测进度") as pbar:
         for batch in dataloader:
-            inputs = batch["input"].to(device, non_blocking=True)
+            inputs = batch["feature"].to(device, non_blocking=True)
             
             # 模型推理
             centers, L_elements = model(inputs)

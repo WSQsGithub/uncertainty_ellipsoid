@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Tuple
 
 import h5py
+import h5pickle
 import numpy as np
 import torch
 import typer
@@ -48,11 +49,12 @@ class UncertaintyEllipsoidDataset(Dataset):
         self.transform = transform
 
         # 打开HDF5文件
-        self.file = h5py.File(h5_path, "r")
+        # self.file = h5py.File(h5_path, "r")
+        self.file = h5pickle.File(str(h5_path), "r")
 
         # 预先加载数据集的大小信息
-        self.num_samples = self.file["world_coordinates"].shape[0]
-        self.M_s = self.file["world_coordinates"].shape[1]
+        self.num_samples = self.file["world_coordinates"].shape[0] # 样本数
+        self.M_s = self.file["world_coordinates"].shape[1] # MC采样数
 
     def __len__(self):
         return self.num_samples
@@ -78,9 +80,6 @@ class UncertaintyEllipsoidDataset(Dataset):
 
         return sample
 
-    def __del__(self):
-        """在数据集被销毁时关闭HDF5文件"""
-        self.file.close()
 
 
 def get_dataloader(
@@ -107,6 +106,7 @@ def get_dataloader(
         shuffle=shuffle,
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),  # 如果使用GPU，启用pin_memory
+        drop_last=True,  # 丢弃最后一个不完整的批次
     )
 
 
