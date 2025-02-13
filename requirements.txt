@@ -19,3 +19,5 @@ h5py
 h5pickle
 tensorboard
 -e .
+fastapi>=0.68.0
+uvicorn>=0.15.0
