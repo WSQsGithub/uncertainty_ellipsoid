@@ -19,7 +19,7 @@ app = typer.Typer()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "train_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_net_top1.pth",
+    model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
     batch_size: int = 64,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     # -----------------------------------------

@@ -17,7 +17,7 @@ app = typer.Typer()
 @app.command()
 def main(
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_net.pth",
+    model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
     predictions_path: Path = PROCESSED_DATA_DIR / "predictions.csv",
     batch_size: int = 64,
     device: str = "auto",
