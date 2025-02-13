@@ -1,6 +1,6 @@
+import platform
 from pathlib import Path
 
-import platform
 import pandas as pd
 import torch
 import typer
@@ -40,7 +40,7 @@ def main(
             device = "cuda"
         else:
             device = "cpu"
-            
+
     device = torch.device(device)
     logger.info(f"使用计算设备: {device}")
 

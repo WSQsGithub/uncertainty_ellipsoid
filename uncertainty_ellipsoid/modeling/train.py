@@ -1,18 +1,16 @@
+import platform
 from pathlib import Path
 
-import pandas as pd
 import torch
 import typer
 from loguru import logger
-from tqdm import tqdm
-import platform
-
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from uncertainty_ellipsoid.config import MODELS_DIR, PROCESSED_DATA_DIR
 from uncertainty_ellipsoid.dataset import FeatureCombiner, get_dataloader
-from uncertainty_ellipsoid.modeling.model import safe_load_model
 from uncertainty_ellipsoid.modeling.loss import UncertaintyEllipsoidLoss
+from uncertainty_ellipsoid.modeling.model import safe_load_model
 
 app = typer.Typer()
 
@@ -23,7 +21,7 @@ def main(
     features_path: Path = PROCESSED_DATA_DIR / "train_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net_top1.pth",
     batch_size: int = 64,
-    device: str = "auto", # auto-detect MPS, CUDA or CPU
+    device: str = "auto",  # auto-detect MPS, CUDA or CPU
     # -----------------------------------------
 ):
     """
@@ -87,7 +85,7 @@ def main(
             optimizer.zero_grad()
 
             # Forward pass
-            centers, L_elements = model(inputs)            
+            centers, L_elements = model(inputs)
             loss = criterion(targets, centers, L_elements)
 
             # Backward pass and optimize
@@ -102,15 +100,16 @@ def main(
         logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
         # Write loss to TensorBoard
-        writer.add_scalar('Loss/train', avg_loss, epoch)
-
+        writer.add_scalar("Loss/train", avg_loss, epoch)
 
         # Check if the model is one of the top 3 best models
         if epoch < 3:
             torch.save(model.state_dict(), MODELS_DIR / f"ellipsoid_net_top{epoch}.pth")
         else:
             # Check if the current model is better than the worst top 3 model
-            top_models = sorted(MODELS_DIR.glob("ellipsoid_net_top*.pth"), key=lambda x: x.stat().st_mtime)
+            top_models = sorted(
+                MODELS_DIR.glob("ellipsoid_net_top*.pth"), key=lambda x: x.stat().st_mtime
+            )
             worst_top_model = top_models[0]
             worst_top_model_loss = float("inf")
             for top_model in top_models:
@@ -139,6 +138,7 @@ def main(
     logger.info("Training complete!")
     # Close TensorBoard writer
     writer.close()
+
 
 if __name__ == "__main__":
     app()
