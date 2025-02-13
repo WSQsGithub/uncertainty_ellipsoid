@@ -7,6 +7,8 @@ from loguru import logger
 from tqdm import tqdm
 import platform
 
+from torch.utils.tensorboard import SummaryWriter
+
 from uncertainty_ellipsoid.config import MODELS_DIR, PROCESSED_DATA_DIR
 from uncertainty_ellipsoid.dataset import FeatureCombiner, get_dataloader
 from uncertainty_ellipsoid.modeling.model import safe_load_model
@@ -65,6 +67,9 @@ def main(
     # Initialize loss function
     criterion = UncertaintyEllipsoidLoss()
 
+    # Initialize TensorBoard writer
+    writer = SummaryWriter()
+
     # Training loop
     logger.info("Starting training...")
     num_epochs = 10
@@ -95,6 +100,10 @@ def main(
 
         avg_loss = running_loss / len(dataloader)
         logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
+
+        # Write loss to TensorBoard
+        writer.add_scalar('Loss/train', avg_loss, epoch)
+
 
         # Check if the model is one of the top 3 best models
         if epoch < 3:
@@ -128,6 +137,8 @@ def main(
                 torch.save(model.state_dict(), worst_top_model)
 
     logger.info("Training complete!")
+    # Close TensorBoard writer
+    writer.close()
 
 if __name__ == "__main__":
     app()
