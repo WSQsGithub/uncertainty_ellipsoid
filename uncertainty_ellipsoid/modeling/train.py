@@ -20,7 +20,7 @@ def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
-    batch_size: int = 64,
+    batch_size: int = 128,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     # -----------------------------------------
 ):
@@ -105,7 +105,7 @@ def main(
             loss.backward()
             optimizer.step()
 
-            running_loss = {k: v + info["loss"][k] for k, v in running_loss.items()}
+            running_loss = {k: v + info["loss"][k] for k, v in running_loss.items()} # BUG: Got <class 'dict'>, but numpy array or torch tensor are expected.
 
             pbar.update(len(inputs))
 
@@ -117,7 +117,10 @@ def main(
             f"Regularization: {avg_loss['regularization']:.4f})"
         )
         # Write loss to TensorBoard
-        writer.add_scalar("Loss/train", avg_loss, epoch)
+        writer.add_scalar("Loss/Total", avg_loss["total"], epoch)
+        writer.add_scalar("Loss/Center", avg_loss["center"], epoch)
+        writer.add_scalar("Loss/Containment", avg_loss["containment"], epoch)
+        writer.add_scalar("Loss/Regularization", avg_loss["regularization"], epoch)
 
         # Check if the model is one of the top 3 best models
         if epoch < 3:
