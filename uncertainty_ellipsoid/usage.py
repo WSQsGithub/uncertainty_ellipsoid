@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
 import requests
+
+from uncertainty_ellipsoid.plots import visualize
 
 URL = "http://localhost:8000"
 
@@ -28,7 +31,7 @@ data = {
         -0.15,
         -0.1,
     ],
-    "num_samples": 10
+    "num_samples": 1000,
 }
 
 # Check the API health
@@ -46,7 +49,9 @@ L_elements = result["L_matrix"]
 # Example simulation request
 response = requests.post(URL + "/simulate", json=data)
 result = response.json()
-print(result)
+# print(result)
 world_coords = result["world_coords"]
 
 ## Visualize the results
+fig, ax = plt.figure(), plt.gca()
+visualize(fig, world_coords, centers, L_elements)

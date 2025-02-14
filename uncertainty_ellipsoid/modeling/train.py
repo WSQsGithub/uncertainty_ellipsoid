@@ -105,7 +105,9 @@ def main(
             loss.backward()
             optimizer.step()
 
-            running_loss = {k: v + info["loss"][k] for k, v in running_loss.items()} # BUG: Got <class 'dict'>, but numpy array or torch tensor are expected.
+            running_loss = {
+                k: v + info["loss"][k] for k, v in running_loss.items()
+            }  # BUG: Got <class 'dict'>, but numpy array or torch tensor are expected.
 
             pbar.update(len(inputs))
 

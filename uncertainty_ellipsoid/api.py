@@ -9,7 +9,12 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator
 
 from uncertainty_ellipsoid.config import MODELS_DIR
-from uncertainty_ellipsoid.dataset import FeatureCombiner, sample_camera_parameters, compute_world_coordinates, UncertaintySet
+from uncertainty_ellipsoid.dataset import (
+    FeatureCombiner,
+    UncertaintySet,
+    compute_world_coordinates,
+    sample_camera_parameters,
+)
 from uncertainty_ellipsoid.modeling.model import safe_load_model
 
 # Initialize global variables
@@ -82,9 +87,11 @@ class SimulationInput(BaseModel):
     uncertainty_set: List[float] = Field(..., min_items=20, max_items=20)
     num_samples: int = Field(..., gt=0)
 
+
 class SimulationOutput(BaseModel):
     world_coords: List[List[float]]
     time_ms: float = None
+
 
 @app.post("/simulate", response_model=SimulationOutput)
 async def simulate(input_data: SimulationInput) -> SimulationOutput:
@@ -116,16 +123,15 @@ async def simulate(input_data: SimulationInput) -> SimulationOutput:
     M_s = input_data.num_samples
 
     world_coords = np.array(
-            [
-                compute_world_coordinates(u, v, d, sample_camera_parameters(uncertainty_set))
-                for _ in range(M_s)
-            ]
-        )
+        [
+            compute_world_coordinates(u, v, d, sample_camera_parameters(uncertainty_set))
+            for _ in range(M_s)
+        ]
+    )
     time_ms = (time.perf_counter() - start_time) * 1000
 
     logger.info(f"Simulation time: {time_ms:.2f} ms")
     return SimulationOutput(world_coords=world_coords.tolist(), time_ms=time_ms)
-
 
 
 @app.post("/predict", response_model=PredictionOutput)

@@ -111,7 +111,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
                 "center": loss_center,
                 "containment": loss_containment,
                 "regularization": loss_reg,
-            }
+            },
         }
 
         return total_loss, info
