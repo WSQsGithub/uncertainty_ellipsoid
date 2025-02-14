@@ -10,6 +10,9 @@ from uncertainty_ellipsoid.config import FIGURES_DIR, PROCESSED_DATA_DIR
 
 app = typer.Typer()
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 def visualize(fig, world_coords, center, L_matrix):
     """Visualize the simulation results using the Cholesky decomposition of the precision matrix.
     
@@ -44,6 +47,11 @@ def visualize(fig, world_coords, center, L_matrix):
     transformed_coords = np.dot(L_matrix, ellipsoid_points)
     x_transformed, y_transformed, z_transformed = transformed_coords
     
+    # Add the center to each point to correctly position the ellipsoid
+    x_transformed += center[0]
+    y_transformed += center[1]
+    z_transformed += center[2]
+    
     # Plot the ellipsoid surface
     ax.plot_surface(x_transformed.reshape(x.shape), y_transformed.reshape(y.shape), z_transformed.reshape(z.shape), 
                     color='g', alpha=0.3, rstride=5, cstride=5, label="Ellipsoid Surface")
@@ -58,6 +66,7 @@ def visualize(fig, world_coords, center, L_matrix):
     
     # Show the plot
     plt.show()
+
 
 
 
