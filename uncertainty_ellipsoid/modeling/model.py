@@ -90,4 +90,6 @@ if __name__ == "__main__":
     # 获取输出 center 和 L
     center, L = model(sample_input)
     print("center shape:", center.shape)  # (batch_size, 3)
+    print("Center:", center)
     print("L shape:", L.shape)  # (batch_size, 3, 3)
+    print("L:", L)

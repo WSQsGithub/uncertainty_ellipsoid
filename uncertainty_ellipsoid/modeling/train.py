@@ -107,8 +107,12 @@ def main(
             pbar.update(len(inputs))
 
         avg_loss = {k: v / len(dataloader) for k, v in running_loss.items()}
-        logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
-
+        logger.info(
+            f"Epoch {epoch + 1}/{num_epochs} Loss: {avg_loss['total']:.4f} "
+            f"(Center: {avg_loss['center']:.4f}, "
+            f"Containment: {avg_loss['containment']:.4f}, "
+            f"Regularization: {avg_loss['regularization']:.4f})"
+        )
         # Write loss to TensorBoard
         writer.add_scalar("Loss/train", avg_loss, epoch)
 
