@@ -65,7 +65,7 @@ def main(
         model = torch.nn.DataParallel(model)
 
     # Initialize optimizer
-    optimizer = torch.optim.SGD(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters())
 
     # Initialize loss function
     criterion = UncertaintyEllipsoidLoss()
@@ -97,6 +97,9 @@ def main(
             # Forward pass
             centers, L_elements = model(inputs)
             loss, info = criterion(targets, centers, L_elements)
+
+            # Clip gradients to avoid exploding gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
             # Backward pass and optimize
             loss.backward()
