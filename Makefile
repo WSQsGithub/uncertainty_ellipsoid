@@ -73,6 +73,11 @@ features:
 train: 
 	$(PYTHON_INTERPRETER) uncertainty_ellipsoid/modeling/train.py
 
+## Make tensorboard
+.PHONY: tensorboard
+tensorboard: 
+	tensorboard --logdir ./runs
+
 
 ## Make Predict
 .PHONY: predict

@@ -3,6 +3,8 @@ import requests
 
 from uncertainty_ellipsoid.plots import visualize
 
+# run make api in the terminal to start the server
+
 URL = "http://localhost:8000"
 
 # Example prediction request
@@ -31,7 +33,7 @@ data = {
         -0.15,
         -0.1,
     ],
-    "num_samples": 1000,
+    "num_samples": 100,
 }
 
 # Check the API health

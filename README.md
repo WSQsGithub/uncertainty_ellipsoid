@@ -216,6 +216,8 @@ $$
 
 where $\lambda$ is a hyperparameter that controls the importance of the regularization term.
 
+Note that the containment loss and regularization loss must be carefully balanced to ensure that the ellipsoid is not too small or too large.
+
 ### Evaluation
 
 We will evaluate the model by computing the containment rate, which is the percentage of true world coordinates that are inside the ellipsoid.

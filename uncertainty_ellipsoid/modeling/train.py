@@ -68,7 +68,9 @@ def main(
     optimizer = torch.optim.Adam(model.parameters())
 
     # Initialize loss function
-    criterion = UncertaintyEllipsoidLoss()
+    criterion = UncertaintyEllipsoidLoss(
+        lambda_center=30, lambda_containment=50, lambda_reg=50
+    )
 
     # Initialize TensorBoard writer
     writer = SummaryWriter()
@@ -76,6 +78,7 @@ def main(
     # Training loop
     logger.info("Starting training...")
     num_epochs = 10
+    best_loss = float("inf")
 
     for epoch in range(num_epochs):
         model.train()
@@ -97,6 +100,7 @@ def main(
             # Forward pass
             centers, L_elements = model(inputs)
             loss, info = criterion(targets, centers, L_elements)
+            # logger.debug("Containment loss: {:.4f}", info["loss"]["containment"])
 
             # Clip gradients to avoid exploding gradients
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -107,7 +111,7 @@ def main(
 
             running_loss = {
                 k: v + info["loss"][k] for k, v in running_loss.items()
-            }  # BUG: Got <class 'dict'>, but numpy array or torch tensor are expected.
+            } 
 
             pbar.update(len(inputs))
 
@@ -125,37 +129,10 @@ def main(
         writer.add_scalar("Loss/Regularization", avg_loss["regularization"], epoch)
 
         # Check if the model is one of the top 3 best models
-        if epoch < 3:
-            torch.save(model.state_dict(), MODELS_DIR / f"ellipsoid_net_top{epoch}.pth")
-        else:
-            # Check if the current model is better than the worst top 3 model
-            top_models = sorted(
-                MODELS_DIR.glob("ellipsoid_net_top*.pth"), key=lambda x: x.stat().st_mtime
-            )
-            worst_top_model = top_models[0]
-            worst_top_model_loss = float("inf")
-            for top_model in top_models:
-                model = safe_load_model(top_model, device)
-                model.eval()
-                running_loss = 0.0
-                with torch.no_grad():
-                    for batch in dataloader:
-                        inputs = batch["feature"].to(device, non_blocking=True)
-                        targets = batch["world_coordinates"].to(device, non_blocking=True)
-
-                        centers, L_elements = model(inputs)
-                        loss, info = criterion(targets, centers, L_elements)
-
-                        running_loss += loss.item()
-
-                avg_loss = running_loss / len(dataloader)
-                if avg_loss < worst_top_model_loss:
-                    worst_top_model = top_model
-                    worst_top_model_loss = avg_loss
-
-            # Replace the worst top model with the current model
-            if avg_loss < worst_top_model_loss:
-                torch.save(model.state_dict(), worst_top_model)
+        if avg_loss["total"] < best_loss:
+            best_loss = avg_loss["total"]
+            logger.info(f"Saving model to {model_path}")
+            torch.save(model.state_dict(), model_path)
 
     logger.info("Training complete!")
     # Close TensorBoard writer
