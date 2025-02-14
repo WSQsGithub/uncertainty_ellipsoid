@@ -80,6 +80,11 @@ predict:
 	$(PYTHON_INTERPRETER) uncertainty_ellipsoid/modeling/predict.py
 
 
+## Make Api
+.PHONY: api
+api: 
+	uvicorn uncertainty_ellipsoid.api:app --reload
+	
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################

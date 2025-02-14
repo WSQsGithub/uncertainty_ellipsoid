@@ -9,7 +9,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator
 
 from uncertainty_ellipsoid.config import MODELS_DIR
-from uncertainty_ellipsoid.dataset import FeatureCombiner, sample_camera_parameters, compute_world_coordinates
+from uncertainty_ellipsoid.dataset import FeatureCombiner, sample_camera_parameters, compute_world_coordinates, UncertaintySet
 from uncertainty_ellipsoid.modeling.model import safe_load_model
 
 # Initialize global variables
@@ -86,7 +86,7 @@ class SimulationOutput(BaseModel):
     world_coords: List[List[float]]
     time_ms: float = None
 
-@app.post("/simulate", response_model=PredictionOutput)
+@app.post("/simulate", response_model=SimulationOutput)
 async def simulate(input_data: SimulationInput) -> SimulationOutput:
     """Simulate uncertainty ellipsoid for given input using Monte Carlo simulation
 
@@ -96,10 +96,23 @@ async def simulate(input_data: SimulationInput) -> SimulationOutput:
     Returns:
         SimulationOutput: Output data for simulation
     """
+    print(input_data)
     start_time = time.perf_counter()
     u, v = input_data.pixel_coordinates
     d = input_data.depth
-    uncertainty_set = input_data.uncertainty_set
+    uncertainty_set = UncertaintySet(
+        f_x=(input_data.uncertainty_set[0], input_data.uncertainty_set[1]),
+        f_y=(input_data.uncertainty_set[2], input_data.uncertainty_set[3]),
+        c_x=(input_data.uncertainty_set[4], input_data.uncertainty_set[5]),
+        c_y=(input_data.uncertainty_set[6], input_data.uncertainty_set[7]),
+        rx=(input_data.uncertainty_set[8], input_data.uncertainty_set[9]),
+        ry=(input_data.uncertainty_set[10], input_data.uncertainty_set[11]),
+        rz=(input_data.uncertainty_set[12], input_data.uncertainty_set[13]),
+        tx=(input_data.uncertainty_set[14], input_data.uncertainty_set[15]),
+        ty=(input_data.uncertainty_set[16], input_data.uncertainty_set[17]),
+        tz=(input_data.uncertainty_set[18], input_data.uncertainty_set[19]),
+    )
+
     M_s = input_data.num_samples
 
     world_coords = np.array(
@@ -109,12 +122,14 @@ async def simulate(input_data: SimulationInput) -> SimulationOutput:
             ]
         )
     time_ms = (time.perf_counter() - start_time) * 1000
+
+    logger.info(f"Simulation time: {time_ms:.2f} ms")
     return SimulationOutput(world_coords=world_coords.tolist(), time_ms=time_ms)
 
 
 
 @app.post("/predict", response_model=PredictionOutput)
-async def predict(input_data: PredictionInput):
+async def predict(input_data: PredictionInput) -> PredictionOutput:
     """
     Predict uncertainty ellipsoid for given input
     """

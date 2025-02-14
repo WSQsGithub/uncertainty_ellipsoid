@@ -1,5 +1,7 @@
 import requests
 
+URL = "http://localhost:8000"
+
 # Example prediction request
 data = {
     "pixel_coordinates": [240, 320],
@@ -26,13 +28,25 @@ data = {
         -0.15,
         -0.1,
     ],
+    "num_samples": 10
 }
+
 # Check the API health
-response = requests.get("http://localhost:8000/health")
+response = requests.get(URL + "/health")
 print(response.json())
 
 
 # Make prediction request
-response = requests.post("http://localhost:8000/predict", json=data)
+response = requests.post(URL + "/predict", json=data)
 result = response.json()
 print(result)
+centers = result["center"]
+L_elements = result["L_matrix"]
+
+# Example simulation request
+response = requests.post(URL + "/simulate", json=data)
+result = response.json()
+print(result)
+world_coords = result["world_coords"]
+
+## Visualize the results
