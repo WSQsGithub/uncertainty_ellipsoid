@@ -77,7 +77,7 @@ def main(
 
             # 模型推理
             centers, L_elements = model(inputs)
-            loss = criterion(targets, centers, L_elements)
+            loss, info = criterion(targets, centers, L_elements)
 
             # 将 centers 和 L_elements 从 GPU 转到 CPU，并转换为 numpy 数组
             centers = centers.cpu().numpy()  # (batch_size, 3)

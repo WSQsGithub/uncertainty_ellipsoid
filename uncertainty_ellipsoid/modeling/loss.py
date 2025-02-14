@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class UncertaintyEllipsoidLoss(nn.Module):
-    def __init__(self, lambda_center=1.0, lambda_containment=1.0, lambda_reg=1.0):
+    def __init__(self, lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
         """
         Initialize the Uncertainty Ellipsoid Loss function.
 
@@ -100,7 +100,21 @@ class UncertaintyEllipsoidLoss(nn.Module):
             + self.lambda_reg * loss_reg
         )
 
-        return total_loss
+        info = {
+            "lambda": {
+                "center": self.lambda_center,
+                "containment": self.lambda_containment,
+                "regularization": self.lambda_reg,
+            },
+            "loss": {
+                "total": total_loss,
+                "center": loss_center,
+                "containment": loss_containment,
+                "regularization": loss_reg,
+            }
+        }
+
+        return total_loss, info
 
 
 # Example usage:
@@ -119,5 +133,5 @@ if __name__ == "__main__":
     L = torch.randn(N, 3, 3).tril()  # Ensure L is lower triangular
 
     # Compute the loss
-    loss = loss_fn(world_coords, pred_center, L)
-    print(f"Total loss: {loss.item()}")
+    loss, info = loss_fn(world_coords, pred_center, L)
+    print("Info:", info)

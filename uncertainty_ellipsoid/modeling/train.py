@@ -18,7 +18,7 @@ app = typer.Typer()
 @app.command()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    features_path: Path = PROCESSED_DATA_DIR / "train_features.h5",
+    features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
     batch_size: int = 64,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
@@ -65,7 +65,7 @@ def main(
         model = torch.nn.DataParallel(model)
 
     # Initialize optimizer
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    optimizer = torch.optim.SGD(model.parameters())
 
     # Initialize loss function
     criterion = UncertaintyEllipsoidLoss()
@@ -79,7 +79,12 @@ def main(
 
     for epoch in range(num_epochs):
         model.train()
-        running_loss = 0.0
+        running_loss = {
+            "total": 0.0,
+            "center": 0.0,
+            "containment": 0.0,
+            "regularization": 0.0,
+        }
         pbar = tqdm(total=len(dataloader.dataset), desc=f"Epoch {epoch + 1}/{num_epochs}")
 
         for batch in dataloader:
@@ -91,17 +96,17 @@ def main(
 
             # Forward pass
             centers, L_elements = model(inputs)
-            loss = criterion(targets, centers, L_elements)
+            loss, info = criterion(targets, centers, L_elements)
 
             # Backward pass and optimize
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.item() / 1000
+            running_loss = {k: v + info["loss"][k] for k, v in running_loss.items()}
 
             pbar.update(len(inputs))
 
-        avg_loss = running_loss / len(dataloader) * 1000
+        avg_loss = {k: v / len(dataloader) for k, v in running_loss.items()}
         logger.info(f"Epoch {epoch + 1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
         # Write loss to TensorBoard
@@ -127,7 +132,7 @@ def main(
                         targets = batch["world_coordinates"].to(device, non_blocking=True)
 
                         centers, L_elements = model(inputs)
-                        loss = criterion(targets, centers, L_elements)
+                        loss, info = criterion(targets, centers, L_elements)
 
                         running_loss += loss.item()
 
