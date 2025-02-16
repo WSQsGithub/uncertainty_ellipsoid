@@ -20,8 +20,9 @@ def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
-    batch_size: int = 128,
+    batch_size: int = 512, # on one GPU
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
+    num_epochs: int = 100,
     # -----------------------------------------
 ):
     """
@@ -69,15 +70,14 @@ def main(
 
     # Initialize loss function
     criterion = UncertaintyEllipsoidLoss(
-        lambda_center=30, lambda_containment=50, lambda_reg=50
+        lambda_center=30, lambda_containment=60, lambda_reg=30
     )
 
     # Initialize TensorBoard writer
     writer = SummaryWriter()
 
     # Training loop
-    logger.info("Starting training...")
-    num_epochs = 10
+    logger.info(f"Starting training for {num_epochs} epochs...")
     best_loss = float("inf")
 
     for epoch in range(num_epochs):

@@ -10,7 +10,7 @@ URL = "http://localhost:8000"
 # Example prediction request
 data = {
     "pixel_coordinates": [240, 320],
-    "depth": 0.5,
+    "depth": 0.3,
     "uncertainty_set": [
         600,
         610,
@@ -23,7 +23,7 @@ data = {
         1.2,
         1.5,
         -1.2,
-        -0.9,
+        -0.5,
         1.2,
         1.5,
         -0.1,
