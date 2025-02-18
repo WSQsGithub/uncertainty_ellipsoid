@@ -196,7 +196,9 @@ $$
 The containment loss is the mean distance between the true world coordinates outside the ellipsoid and the ellipsoid surface.
 
 $$
-\mathcal{L}_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \max(0, (x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)
+\mathcal{L}_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \max(0, (x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)\\
+or\\
+\mathcal{L}_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \mathbb{1}((x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)
 $$
 
 #### Regularization loss
@@ -204,9 +206,11 @@ $$
 The ellipsoid must not be too large, so we add a regularization term to the loss function.
 
 $$
-\mathcal{L}_{\text{regularization}} = \frac{1}{N} \sum_{i=1}^{N} \text{trace}(\hat{P}_i)\\
-=\frac{1}{N} \sum_{i=1}^{N} (p_{i11} + p_{i22} + p_{i33})
+\text{vol}_i = \frac{4}{3} \pi \sqrt{\text{det}(P_i)} = \frac{4}{3} \pi |\text{det}(L)|\\
+\text{det}(L) = l_{11} \cdot (l_{22} \cdot l_{33} - l_{32} \cdot l_{32}) \\- l_{21} \cdot (l_{21} \cdot l_{33}  - l_{31} \cdot l_{32}) \\+ l_{31} \cdot (l_{21} \cdot l_{32} - l_{22} \cdot l_{31})\\
+\mathcal{L}_\text{regularization} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{\text{vol}_i}
 $$
+
 
 The total loss is given by:
 

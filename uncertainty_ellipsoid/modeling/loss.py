@@ -73,8 +73,12 @@ class UncertaintyEllipsoidLoss(nn.Module):
         """
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
-        reg_loss = torch.mean(torch.sum(L**2, dim=(1, 2)))  # Shape (N,)
-        return reg_loss
+        
+        det_L = torch.abs(torch.det(L)).mean()
+
+        return det_L
+
+        
 
     def forward(self, world_coords, pred_center, L):
         """
