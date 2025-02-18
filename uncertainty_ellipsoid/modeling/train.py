@@ -21,6 +21,7 @@ def main(
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
     model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
     batch_size: int = 512, # on one GPU
+    num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
     loss_weight: list[float] = [1000, 1000, 1000], # center_loss, containment_loss, reg_loss
@@ -53,7 +54,7 @@ def main(
         h5_path=features_path,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=num_workers,
         transform=FeatureCombiner(),
     )
 
