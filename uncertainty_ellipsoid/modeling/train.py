@@ -23,7 +23,7 @@ def main(
     batch_size: int = 512, # on one GPU
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [1, 1, 1], # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [1000, 1000, 1000], # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """
