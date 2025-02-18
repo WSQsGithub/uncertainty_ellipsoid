@@ -70,7 +70,7 @@ def main(
 
     # Initialize loss function
     criterion = UncertaintyEllipsoidLoss(
-        lambda_center=30, lambda_containment=60, lambda_reg=30
+        lambda_center=1, lambda_containment=100, lambda_reg=0.1
     )
 
     # Initialize TensorBoard writer
