@@ -78,6 +78,11 @@ train:
 tensorboard: 
 	tensorboard --logdir ./runs
 
+## Make Optuna dashboard
+.PHONY: optuna
+optuna: 
+	optuna-dashboard sqlite:///optuna.db
+
 
 ## Make Predict
 .PHONY: predict

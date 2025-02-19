@@ -74,7 +74,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
 
-        l11, l21, l22, l31, l32, l33 = (
+        l11, _, l22, _, _, l33 = (
             L[:, 0, 0],
             L[:, 1, 0],
             L[:, 1, 1],
@@ -82,11 +82,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             L[:, 2, 1],
             L[:, 2, 2],
         )
-        det_L = (
-            l11 * (l22 * l33 - l32 * l32)
-            - l21 * (l21 * l33 - l31 * l32)
-            + l31 * (l21 * l32 - l22 * l31)
-        )
+        det_L = l11 * l22 * l33
 
         reg_loss = 1 / torch.abs(det_L)
 
@@ -111,11 +107,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             L[:, 2, 1],
             L[:, 2, 2],
         )
-        det_L = (
-            l11 * (l22 * l33 - l32 * l32)
-            - l21 * (l21 * l33 - l31 * l32)
-            + l31 * (l21 * l32 - l22 * l31)
-        )
+        det_L = l11 * l22 * l33
 
         vol_predicted = 4 / 3 * torch.pi * torch.abs(det_L)
 

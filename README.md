@@ -160,23 +160,23 @@ We will train a neural network to predict the 9 parameters of the ellipsoid give
 The neural network will have the following architecture:
 
 1. Input layer with 23 neurons 
-    ```python
-    inputs = (
-        u, v, d, 
-        f_x_min, f_x_max, f_y_min, f_y_max, 
-        c_x_min, c_x_max, c_y_min, c_y_max, 
-        rx_min, rx_max, ry_min, ry_max, rz_min, rz_max, 
-        tx_min, tx_max, ty_min, ty_max, tz_min, tz_max
-        )
-    ```
+```python
+inputs = (
+    u, v, d, 
+    f_x_min, f_x_max, f_y_min, f_y_max, 
+    c_x_min, c_x_max, c_y_min, c_y_max, 
+    rx_min, rx_max, ry_min, ry_max, rz_min, rz_max, 
+    tx_min, tx_max, ty_min, ty_max, tz_min, tz_max
+    )
+```
 2. 3 hidden layers with 64 neurons each
 3. Output layer with 9 neurons (3 for the center and 6 for the Cholesky decomposition of the precision matrix)
-    ```python
-    outputs = (
-    c_x, c_y, c_z,  # 3 for the center of the ellipsoid
-    l_11, l_21, l_31, l_22, l_32, l_33  # 6 for the lower triangular elements of the precision matrix
-    )
-    ```
+```python
+outputs = (
+c_x, c_y, c_z,  # 3 for the center of the ellipsoid
+l_11, l_21, l_31, l_22, l_32, l_33  # 6 for the lower triangular elements of the precision matrix
+)
+```
 
 ### Loss function
 
@@ -207,7 +207,7 @@ The ellipsoid must not be too large, so we add a regularization term to the loss
 
 $$
 \text{vol}_i = \frac{4}{3} \pi /\sqrt{\text{det}(P_i)} = \frac{4}{3} \pi /|\text{det}(L)|\\
-\text{det}(L) = l_{11} \cdot (l_{22} \cdot l_{33} - l_{32} \cdot l_{32}) \\- l_{21} \cdot (l_{21} \cdot l_{33}  - l_{31} \cdot l_{32}) \\+ l_{31} \cdot (l_{21} \cdot l_{32} - l_{22} \cdot l_{31})\\
+\text{det}(L) = l_{11} \cdot l_{22} \cdot l_{33} \\
 \mathcal{L}_\text{regularization} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{|\text{det}(L_i)|}
 $$
 

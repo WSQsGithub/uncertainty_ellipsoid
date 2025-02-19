@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"Using device: {device}")
 
         # Load model
-        model_path = MODELS_DIR / "ellipsoid_net_top0_0219_116.pth"
+        model_path = MODELS_DIR / "ellipsoid_net_top0_0219_142.pth"
         model = safe_load_model(model_path, device)
         model.eval()
         logger.info("Model loaded successfully")
