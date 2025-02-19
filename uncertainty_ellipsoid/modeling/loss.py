@@ -83,6 +83,29 @@ class UncertaintyEllipsoidLoss(nn.Module):
 
         return reg_loss
 
+    def volume_loss(self, world_coords, L):
+        """
+        Volume loss: the volume difference between the predicted ellipse and convex hull
+
+        Args:
+            world_coords (Tensor): World coordinates of shape (N, M_S, 3)
+            L (Tensor): Lower triangular matrix from the Cholesky decomposition, shape (N, 3, 3)
+
+        Return:
+            Tensor: The volume loss
+        """
+        l11, l21, l22, l31, l32, l33 = L[:, 0, 0], L[:, 1, 0], L[:, 1, 1], L[:, 2, 0], L[:, 2, 1], L[:, 2, 2]
+        det_L = (l11 * (l22 * l33 - l32 * l32) -
+                 l21 * (l21 * l33 - l31 * l32) +
+                 l31 * (l21 * l32 - l22 * l31))
+        
+        vol_predicted = 4/3 * torch.pi * torch.abs(det_L)
+
+        vol_hull = None # TODO: finish this value
+
+        vol_diff = vol_predicted - vol_hull
+
+        return torch.sigmoid(1000 * vol_diff).mean() # to enlarge the difference
         
 
     def forward(self, world_coords, pred_center, L):

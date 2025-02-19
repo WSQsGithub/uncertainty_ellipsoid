@@ -24,7 +24,7 @@ def main(
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [1000, 1000, 1000], # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [10, 10, 1000], # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """
