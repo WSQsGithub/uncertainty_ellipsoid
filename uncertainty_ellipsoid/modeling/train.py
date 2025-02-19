@@ -19,12 +19,12 @@ app = typer.Typer()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_net_top0.pth",
-    batch_size: int = 512, # on one GPU
+    model_path: Path = MODELS_DIR / "ellipsoid_net_top0_0219_116.pth",
+    batch_size: int = 512,  # on one GPU
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [10, 10, 1000], # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [10, 10, 1000000],  # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """
@@ -111,9 +111,7 @@ def main(
             loss.backward()
             optimizer.step()
 
-            running_loss = {
-                k: v + info["loss"][k] for k, v in running_loss.items()
-            } 
+            running_loss = {k: v + info["loss"][k] for k, v in running_loss.items()}
 
             pbar.update(len(inputs))
 

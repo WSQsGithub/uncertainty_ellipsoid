@@ -61,7 +61,7 @@ class FeatureCombiner:
         uncertainty_set = sample["uncertainty_set"]
 
         # 归一化
-        pixel_coordinates /= ParameterRange.u_range[1]
+        pixel_coordinates = pixel_coordinates / ParameterRange.u_range[1]
         depth = (depth - ParameterRange.d_range[0]) / (
             ParameterRange.d_range[1] - ParameterRange.d_range[0]
         )

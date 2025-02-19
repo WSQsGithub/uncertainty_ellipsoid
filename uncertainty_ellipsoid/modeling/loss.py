@@ -52,11 +52,11 @@ class UncertaintyEllipsoidLoss(nn.Module):
         # Calculate (x_ij - c_i)^T * P_i * (x_ij - c_i)
         distances = torch.bmm(diff, P)  # Shape (N, M_S, 3)
         distances = torch.bmm(distances, diff.transpose(1, 2))  # Shape (N, M_S, M_S)
-        distances = torch.diagonal(distances, dim1=1, dim2=2)-1  # Shape (N,M_S)
+        distances = torch.diagonal(distances, dim1=1, dim2=2) - 1  # Shape (N,M_S)
 
         # Containment loss: max(0, (x_ij - c_i)^T P_i (x_ij - c_i) - 1)
         containment_losses = torch.mean(torch.sigmoid(distances * 1000), dim=1)  # Shape (N,)
-    
+
         # Average the loss across all samples
         containment_loss = containment_losses.mean()  # Scalar
         return containment_loss
@@ -74,14 +74,23 @@ class UncertaintyEllipsoidLoss(nn.Module):
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
 
-        l11, l21, l22, l31, l32, l33 = L[:, 0, 0], L[:, 1, 0], L[:, 1, 1], L[:, 2, 0], L[:, 2, 1], L[:, 2, 2]
-        det_L = (l11 * (l22 * l33 - l32 * l32) -
-                 l21 * (l21 * l33 - l31 * l32) +
-                 l31 * (l21 * l32 - l22 * l31))
-        
-        reg_loss = torch.abs(det_L).mean()
+        l11, l21, l22, l31, l32, l33 = (
+            L[:, 0, 0],
+            L[:, 1, 0],
+            L[:, 1, 1],
+            L[:, 2, 0],
+            L[:, 2, 1],
+            L[:, 2, 2],
+        )
+        det_L = (
+            l11 * (l22 * l33 - l32 * l32)
+            - l21 * (l21 * l33 - l31 * l32)
+            + l31 * (l21 * l32 - l22 * l31)
+        )
 
-        return reg_loss
+        reg_loss = 1 / torch.abs(det_L)
+
+        return reg_loss.mean()
 
     def volume_loss(self, world_coords, L):
         """
@@ -94,19 +103,27 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Return:
             Tensor: The volume loss
         """
-        l11, l21, l22, l31, l32, l33 = L[:, 0, 0], L[:, 1, 0], L[:, 1, 1], L[:, 2, 0], L[:, 2, 1], L[:, 2, 2]
-        det_L = (l11 * (l22 * l33 - l32 * l32) -
-                 l21 * (l21 * l33 - l31 * l32) +
-                 l31 * (l21 * l32 - l22 * l31))
-        
-        vol_predicted = 4/3 * torch.pi * torch.abs(det_L)
+        l11, l21, l22, l31, l32, l33 = (
+            L[:, 0, 0],
+            L[:, 1, 0],
+            L[:, 1, 1],
+            L[:, 2, 0],
+            L[:, 2, 1],
+            L[:, 2, 2],
+        )
+        det_L = (
+            l11 * (l22 * l33 - l32 * l32)
+            - l21 * (l21 * l33 - l31 * l32)
+            + l31 * (l21 * l32 - l22 * l31)
+        )
 
-        vol_hull = None # TODO: finish this value
+        vol_predicted = 4 / 3 * torch.pi * torch.abs(det_L)
+
+        vol_hull = None  # TODO: finish this value
 
         vol_diff = vol_predicted - vol_hull
 
-        return torch.sigmoid(1000 * vol_diff).mean() # to enlarge the difference
-        
+        return torch.sigmoid(1000 * vol_diff).mean()  # to enlarge the difference
 
     def forward(self, world_coords, pred_center, L):
         """

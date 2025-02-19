@@ -1,3 +1,4 @@
+import atexit
 import time
 from contextlib import asynccontextmanager
 from typing import List
@@ -7,7 +8,6 @@ import torch
 from fastapi import FastAPI
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator
-import atexit
 
 from uncertainty_ellipsoid.config import MODELS_DIR
 from uncertainty_ellipsoid.dataset import (
@@ -23,6 +23,7 @@ model = None
 device = None
 transform = FeatureCombiner()
 
+
 def cleanup_resources():
     """Cleanup function to handle resource deletion"""
     global model, device
@@ -31,12 +32,14 @@ def cleanup_resources():
         del model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         # Clear MPS cache if available
         torch.mps.empty_cache()
 
+
 # Register cleanup function
 atexit.register(cleanup_resources)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,7 +59,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"Using device: {device}")
 
         # Load model
-        model_path = MODELS_DIR / "ellipsoid_net_top0.pth"
+        model_path = MODELS_DIR / "ellipsoid_net_top0_0219_116.pth"
         model = safe_load_model(model_path, device)
         model.eval()
         logger.info("Model loaded successfully")

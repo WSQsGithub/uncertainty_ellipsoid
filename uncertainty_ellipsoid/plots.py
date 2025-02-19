@@ -10,9 +10,6 @@ from uncertainty_ellipsoid.config import FIGURES_DIR, PROCESSED_DATA_DIR
 
 app = typer.Typer()
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 
 def visualize(fig, world_coords, center, L_matrix):
     """Visualize the simulation results using the Cholesky decomposition of the precision matrix.
