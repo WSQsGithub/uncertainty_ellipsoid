@@ -216,5 +216,5 @@ Note that the containment loss and regularization loss must be carefully balance
 
 We will evaluate the model by computing the containment rate, which is the percentage of true world coordinates that are inside the ellipsoid.
 
-$$ \text{Containment rate} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \mathbb{1}((x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) \leq 1) $$
+$$\text{Containment rate} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \mathbb{1}((x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) \leq 1)$$
 
