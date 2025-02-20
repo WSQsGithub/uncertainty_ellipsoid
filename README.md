@@ -72,7 +72,7 @@ $$
 (x - c)^T P (x - c) \leq 1
 $$
 
-where $c$ is the center of the ellipsoid, $P$ is the precision matrix, and $x$ is the world coordinate. 
+where $c$ is the center of the ellipsoid, $P$ is the precision matrix, and \(x\) is the world coordinate. 
 
 Note that $ P $ is a positive definite matrix, which means that it can be determined by its lower triangular Cholesky decomposition $ P = L^T L $, where $ L $ is the lower triangular matrix. We will use the 6 parameters of $ L $ to parameterize the ellipsoid:
 
