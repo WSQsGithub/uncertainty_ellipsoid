@@ -197,12 +197,15 @@ $$
 
 The containment loss is the mean distance between the true world coordinates outside the ellipsoid and the ellipsoid surface.
 
-$$ {L}_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \max(0, (x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)$$
+$$
+L_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \max(0, (x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)
+$$
 
 or we can also try
 
 $$
-{L}_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} \mathbb{1}((x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1) $$
+L_{\text{containment}} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{M_S} \sum_{j=1}^{M_S} 1((x_{ij} - \hat{c}_i)^T \hat{P}_i (x_{ij} - \hat{c}_i) - 1)
+$$
 
 #### Regularization loss
 
@@ -212,20 +215,23 @@ $$
 \text{vol}_i = \frac{4}{3} \pi /\sqrt{\text{det}(P_i)} = \frac{4}{3} \pi /|\text{det}(L)|
 $$
 
-where $\text{det}(L)$ is the determinant of the lower triangular matrix $L$.
+where $\text{det}(L)$ is the determinant of the lower triangular matrix $L$:
 
 $$
 \text{det}(L) = l_{11} \cdot l_{22} \cdot l_{33}
 $$
 
-$$
-{L}_\text{regularization} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{|\text{det}(L_i)|} 
-$$
+therefore, the regularization loss is:
 
+$$
+L_\text{regularization} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{|\text{det}(L_i)|}
+$$
 
 The total loss is given by:
 
-$$ {L} = \lambda_{\text{center}}{L}_{\text{center}} + \lambda_{\text{containment}}{L}_{\text{containment}} + \lambda_{\text{reg}} {L}_{\text{regularization}} $$
+$$
+L = \lambda_{\text{center}}L_{\text{center}} + \lambda_{\text{containment}} L_{\text{containment}} + \lambda_{\text{reg}} L_{\text{regularization}} 
+$$
 
 where $\lambda$ is a hyperparameter that controls the importance of the regularization term.
 
