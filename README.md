@@ -205,11 +205,11 @@ $$
 
 The ellipsoid must not be too large, so we add a regularization term to the loss function.
 
-$$
+\[
 \text{vol}_i = \frac{4}{3} \pi /\sqrt{\text{det}(P_i)} = \frac{4}{3} \pi /|\text{det}(L)|\\
 \text{det}(L) = l_{11} \cdot l_{22} \cdot l_{33} \\
 \mathcal{L}_\text{regularization} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{|\text{det}(L_i)|}
-$$
+\]
 
 
 The total loss is given by:
