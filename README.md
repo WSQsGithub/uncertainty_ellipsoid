@@ -140,7 +140,7 @@ The data will be stored in a pt file with the following structure:
 
 ```python
 {
-    'parameters': torch.Tensor, # (N, 23) => the intrinsic and extrinsic parameter ranges 
+    'parameters': torch.Tensor, # (N, 20) => the intrinsic and extrinsic parameter ranges 
     'pixel': torch.Tensor, # (N, 2) => (u,v)
     'depth': torch.Tensor, # (N, 1)  => d
     'world': torch.Tensor, # (N, M_S, 3) => M_S * (x,y,z)
