@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+from typing import Literal
 
 import torch
 import typer
@@ -18,8 +19,9 @@ app = typer.Typer()
 @app.command()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
+    task: str = "train_center", # ["train_center", "train_shape", "end2end"]
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_net_top0_0219_142.pth",
+    model_path: Path = MODELS_DIR / "ellipsoid_center_net_0324_10.pth", 
     batch_size: int = 512,  # on one GPU
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
@@ -71,6 +73,10 @@ def main(
     optimizer = torch.optim.Adam(model.parameters())
 
     # Initialize loss function
+    if task == "train_center":
+        logger.info("Training center")
+        loss_weight  = [loss_weight[0], 0, 0]
+
     criterion = UncertaintyEllipsoidLoss(
         lambda_center=loss_weight[0], lambda_containment=loss_weight[1], lambda_reg=loss_weight[2]
     )

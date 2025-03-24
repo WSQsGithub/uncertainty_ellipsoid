@@ -1,4 +1,5 @@
 from pathlib import Path
+from re import L
 
 import torch
 import torch.nn as nn
@@ -54,6 +55,25 @@ class EllipsoidNet(nn.Module):
 
         # 返回中心和 L 矩阵
         return center, L
+    
+
+class EllipsoidCenterNet(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 输入层 23 个神经元
+        self.fc1 = nn.Linear(23, 64)
+        # 三个隐藏层，每个层有 64 个神经元
+        self.fc2 = nn.Linear(64, 64)
+        self.fc3 = nn.Linear(64, 64)
+        # 输出层 3 个神经元 (3 个中心坐标)
+        self.fc4 = nn.Linear(64, 3)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        center = self.fc4(x)
+        return center
 
 
 def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
@@ -79,7 +99,8 @@ def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
 
 if __name__ == "__main__":
     # 创建模型实例
-    model = EllipsoidNet()
+    # model = EllipsoidNet()
+    model = EllipsoidCenterNet()
 
     # 打印模型架构
     print(model)
@@ -88,8 +109,9 @@ if __name__ == "__main__":
     sample_input = torch.randn(5, 23)  # 示例输入
 
     # 获取输出 center 和 L
-    center, L = model(sample_input)
+    # center, L = model(sample_input)
+    center = model(sample_input)
     print("center shape:", center.shape)  # (batch_size, 3)
     print("Center:", center)
-    print("L shape:", L.shape)  # (batch_size, 3, 3)
-    print("L:", L)
+    # print("L shape:", L.shape)  # (batch_size, 3, 3)
+    # print("L:", L)
