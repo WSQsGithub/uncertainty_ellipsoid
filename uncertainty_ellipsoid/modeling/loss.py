@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class UncertaintyEllipsoidLoss(nn.Module):
-    def __init__(self, lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
+    def __init__(self, task: str, lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
         """
         Initialize the Uncertainty Ellipsoid Loss function.
 
@@ -13,6 +13,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             lambda_reg (float): Hyperparameter controlling the regularization loss weight
         """
         super(UncertaintyEllipsoidLoss, self).__init__()
+        self.task = task
         self.lambda_center = lambda_center
         self.lambda_containment = lambda_containment
         self.lambda_reg = lambda_reg
@@ -34,7 +35,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         loss = torch.mean((true_center - pred_center) ** 2)
         return loss
 
-    def containment_loss(self, world_coords, pred_center, P):
+    def containment_loss(self, world_coords, pred_center, P = None):
         """
         Containment loss: Mean distance between the true world coordinates outside the ellipsoid and the ellipsoid surface.
 
@@ -46,6 +47,9 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Returns:
             Tensor: Containment loss value.
         """
+        if self.task == "train_center":
+            return 0
+
         N, M_S, _ = world_coords.size()
         diff = world_coords - pred_center.unsqueeze(1)  # Shape (N, M_S, 3)
 
@@ -61,7 +65,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         containment_loss = containment_losses.mean()  # Scalar
         return containment_loss
 
-    def regularization_loss(self, L):
+    def regularization_loss(self, L=None):
         """
         Regularization loss: Ensures the ellipsoid is not too large by minimizing the trace of P.
 
@@ -71,9 +75,10 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Returns:
             Tensor: Regularization loss value.
         """
+        if self.task == "train_center":
+            return 0
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
-
         l11, _, l22, _, _, l33 = (
             L[:, 0, 0],
             L[:, 1, 0],

@@ -74,11 +74,60 @@ class EllipsoidCenterNet(nn.Module):
         x = F.relu(self.fc3(x))
         center = self.fc4(x)
         return center
+    
+class EllipsoidShapeNet(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 输入层 23 + 3 个神经元
+        self.fc1 = nn.Linear(26, 64)
+        # 三个隐藏层，每个层有 64 个神经元
+        self.fc2 = nn.Linear(64, 64)
+        self.fc3 = nn.Linear(64, 64)
+        # 输出层 6 个神经元 (精度矩阵下三角元素)
+        self.fc4 = nn.Linear(64, 6)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        outputs = self.fc4(x)
+
+        # 将输出分解为精度矩阵的下三角元素
+        l_11, l_21, l_31, l_22, l_32, l_33 = torch.chunk(outputs, 6, dim=-1)
+
+        # 使精度矩阵的下三角元素为正，使用 softplus 保证正数
+        l_11 = F.softplus(l_11)
+        l_22 = F.softplus(l_22)
+        l_33 = F.softplus(l_33)
+        l_21 = F.softplus(l_21)
+        l_31 = F.softplus(l_31)
+        l_32 = F.softplus(l_32)
+        
+        # 构造 3x3 下三角矩阵 L（支持批量计算）
+        batch_size = x.size(0)
+        L = torch.zeros((batch_size, 3, 3), device=x.device)
+
+        # 填充 L 矩阵的下三角部分
+        L[:, 0, 0] = l_11.squeeze(-1)  # 确保形状匹配
+        L[:, 1, 0] = l_21.squeeze(-1)
+        L[:, 2, 0] = l_31.squeeze(-1)
+        L[:, 1, 1] = l_22.squeeze(-1)
+        L[:, 2, 1] = l_32.squeeze(-1)
+        L[:, 2, 2] = l_33.squeeze(-1)
+
+        # 返回中心和 L 矩阵
+        return L
 
 
-def safe_load_model(model_path: Path, device: torch.device) -> EllipsoidNet:
+
+def safe_load_model(model_path: Path, device: torch.device, task: str) -> EllipsoidNet:
     """Safely load model, automatically handle missing weights"""
-    model = EllipsoidNet()
+    if task == "end2end":
+        model = EllipsoidNet()
+    elif task == "train_center":
+        model = EllipsoidCenterNet()
+    elif task == "train_shape":
+        model = EllipsoidShapeNet()
 
     try:
         # Try to load pretrained weights

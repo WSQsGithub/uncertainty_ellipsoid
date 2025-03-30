@@ -62,7 +62,7 @@ def main(
 
     # Initialize model
     logger.info(f"Safe loading model from {model_path} to {device}")
-    model = safe_load_model(model_path, device)
+    model = safe_load_model(model_path, device, task)
 
     # If using multiple GPUs, use DataParallel
     if torch.cuda.device_count() > 1:
@@ -78,6 +78,7 @@ def main(
         loss_weight  = [loss_weight[0], 0, 0]
 
     criterion = UncertaintyEllipsoidLoss(
+        task=task,
         lambda_center=loss_weight[0], lambda_containment=loss_weight[1], lambda_reg=loss_weight[2]
     )
 
