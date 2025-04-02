@@ -139,8 +139,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: The total loss value.
         """
         # Compute P once in the forward function
-        if L:
-            P = torch.bmm(L.transpose(1, 2), L)  # Shape (N, 3, 3)
+        P = torch.bmm(L.transpose(1, 2), L) if L else None  # Shape (N, 3, 3)
 
         # Compute the three components of the loss
         loss_center = self.center_loss(world_coords, pred_center)

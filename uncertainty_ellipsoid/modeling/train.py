@@ -21,12 +21,12 @@ def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     task: str = "train_center", # ["train_center", "train_shape", "end2end"]
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_center_net_0324_10.pth", 
+    model_path: Path = MODELS_DIR / "ellipsoid_center_net_0402_400.pth", 
     batch_size: int = 512,  # on one GPU
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [10, 10000, 100],  # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [10000,0,0],  # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """
@@ -110,10 +110,12 @@ def main(
             output = model(inputs)
             if task == "train_center":
                 centers = output
+                L_elements = None
             elif task == "train_shape":
                 L_elements = output
             else:
                 centers, L_elements = output
+
 
             loss, info = criterion(targets, centers, L_elements)
             # logger.debug("Containment loss: {:.4f}", info["loss"]["containment"])
