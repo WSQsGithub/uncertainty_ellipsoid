@@ -107,7 +107,14 @@ def main(
             optimizer.zero_grad()
 
             # Forward pass
-            centers, L_elements = model(inputs)
+            output = model(inputs)
+            if task == "train_center":
+                centers = output
+            elif task == "train_shape":
+                L_elements = output
+            else:
+                centers, L_elements = output
+
             loss, info = criterion(targets, centers, L_elements)
             # logger.debug("Containment loss: {:.4f}", info["loss"]["containment"])
 

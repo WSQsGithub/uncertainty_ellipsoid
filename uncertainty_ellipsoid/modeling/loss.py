@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
-from typing import Literal
+from typing import Literal, Optional
 
 
 class UncertaintyEllipsoidLoss(nn.Module):
-    def __init__(self, task: Literal["train_center", "train_ellipsoid"], lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
+    def __init__(self, task: Literal["train_center", "train_shape", "train_end2end"], lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
         """
         Initialize the Uncertainty Ellipsoid Loss function.
 
         Args:
-            task (str): Task type, either "train_center" or "train_ellipsoid"
+            task (str): Task type, either "train_center" or "train_shape" or "train_end2end"
             lambda_center (float): Hyperparameter controlling the center loss weight
             lambda_containment (float): Hyperparameter controlling the containment loss weight
             lambda_reg (float): Hyperparameter controlling the regularization loss weight
@@ -37,7 +37,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         loss = torch.mean((true_center - pred_center) ** 2)
         return loss
 
-    def containment_loss(self, world_coords, pred_center, P = None):
+    def containment_loss(self, world_coords, pred_center, P: Optional[torch.Tensor] = None):
         """
         Containment loss: Mean distance between the true world coordinates outside the ellipsoid and the ellipsoid surface.
 
@@ -49,7 +49,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Returns:
             Tensor: Containment loss value.
         """
-        if self.task == "train_center":
+        if P is None:
             return 0
 
         N, M_S, _ = world_coords.size()
@@ -77,7 +77,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Returns:
             Tensor: Regularization loss value.
         """
-        if self.task == "train_center":
+        if L is None:
             return 0
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
@@ -95,7 +95,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
 
         return reg_loss.mean()
 
-    def volume_loss(self, world_coords, L):
+    def volume_loss(self, world_coords, L: Optional[torch.Tensor] = None):
         """
         Volume loss: the volume difference between the predicted ellipse and convex hull
 
@@ -106,6 +106,8 @@ class UncertaintyEllipsoidLoss(nn.Module):
         Return:
             Tensor: The volume loss
         """
+        if L is None:
+            return 0
         l11, l21, l22, l31, l32, l33 = (
             L[:, 0, 0],
             L[:, 1, 0],
@@ -124,7 +126,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
 
         return torch.sigmoid(1000 * vol_diff).mean()  # to enlarge the difference
 
-    def forward(self, world_coords, pred_center, L):
+    def forward(self, world_coords, pred_center, L: Optional[torch.Tensor] = None):
         """
         Compute the total loss.
 
@@ -137,7 +139,8 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: The total loss value.
         """
         # Compute P once in the forward function
-        P = torch.bmm(L.transpose(1, 2), L)  # Shape (N, 3, 3)
+        if L:
+            P = torch.bmm(L.transpose(1, 2), L)  # Shape (N, 3, 3)
 
         # Compute the three components of the loss
         loss_center = self.center_loss(world_coords, pred_center)
