@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
+from typing import Literal
 
 
 class UncertaintyEllipsoidLoss(nn.Module):
-    def __init__(self, task: str, lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
+    def __init__(self, task: Literal["train_center", "train_ellipsoid"], lambda_center=1.0, lambda_containment=0.5, lambda_reg=0.1):
         """
         Initialize the Uncertainty Ellipsoid Loss function.
 
         Args:
+            task (str): Task type, either "train_center" or "train_ellipsoid"
             lambda_center (float): Hyperparameter controlling the center loss weight
             lambda_containment (float): Hyperparameter controlling the containment loss weight
             lambda_reg (float): Hyperparameter controlling the regularization loss weight
