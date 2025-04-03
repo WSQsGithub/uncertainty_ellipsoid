@@ -50,7 +50,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: Containment loss value.
         """
         if P is None:
-            return 0
+            return torch.tensor(0.0, device=world_coords.device)
 
         N, M_S, _ = world_coords.size()
         diff = world_coords - pred_center.unsqueeze(1)  # Shape (N, M_S, 3)
@@ -78,7 +78,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: Regularization loss value.
         """
         if L is None:
-            return 0
+            return torch.tensor(0.0, device=world_coords.device)
         # Regularization is the trace of P = L^T * L
         # Since trace(P) = trace(L^T * L) = sum(diagonal(L^T * L)) = sum(diagonal(L * L^T))
         l11, _, l22, _, _, l33 = (
@@ -107,7 +107,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: The volume loss
         """
         if L is None:
-            return 0
+            return torch.tensor(0.0, device=world_coords.device)
         l11, l21, l22, l31, l32, l33 = (
             L[:, 0, 0],
             L[:, 1, 0],
@@ -139,7 +139,7 @@ class UncertaintyEllipsoidLoss(nn.Module):
             Tensor: The total loss value.
         """
         # Compute P once in the forward function
-        P = torch.bmm(L.transpose(1, 2), L) if L else None  # Shape (N, 3, 3)
+        P = torch.bmm(L.transpose(1, 2), L) if L is not None else None  # Shape (N, 3, 3)
 
         # Compute the three components of the loss
         loss_center = self.center_loss(world_coords, pred_center)

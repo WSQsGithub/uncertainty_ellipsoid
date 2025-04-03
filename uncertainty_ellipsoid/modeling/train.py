@@ -19,14 +19,14 @@ app = typer.Typer()
 @app.command()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    task: str = "train_center", # ["train_center", "train_shape", "end2end"]
+    task: str = "train_shape", # "train_center", "train_shape", "end2end"
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_center_net_0402_400.pth", 
+    model_path: Path = MODELS_DIR / "ellipsoid_shape_net_0403.pth", 
     batch_size: int = 512,  # on one GPU
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [10000,0,0],  # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [0,10000,1],  # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """
@@ -77,6 +77,12 @@ def main(
         logger.info("Training center")
         loss_weight  = [loss_weight[0], 0, 0]
 
+    elif task == "train_shape":
+        logger.info("Training shape")
+        loss_weight = [0, loss_weight[1], loss_weight[2]]
+        center_net = safe_load_model(model_path = MODELS_DIR / "ellipsoid_center_net_best.pth", device=device, task="train_center")
+        center_net.eval()
+
     criterion = UncertaintyEllipsoidLoss(
         task=task,
         lambda_center=loss_weight[0], lambda_containment=loss_weight[1], lambda_reg=loss_weight[2]
@@ -100,20 +106,28 @@ def main(
         pbar = tqdm(total=len(dataloader.dataset), desc=f"Epoch {epoch + 1}/{num_epochs}")
 
         for batch in dataloader:
-            inputs = batch["feature"].to(device, non_blocking=True)
+            inputs = batch["feature"].to(device, non_blocking=True) # (batch_size, 23)
             targets = batch["world_coordinates"].to(device, non_blocking=True)
 
             # Zero the parameter gradients
             optimizer.zero_grad()
 
             # Forward pass
-            output = model(inputs)
             if task == "train_center":
+                output = model(inputs)
                 centers = output
                 L_elements = None
             elif task == "train_shape":
+                with torch.no_grad():
+                    centers = center_net(inputs) # centers is (batch_size, 3)
+                # concatenate centers and inputs to form (batch_size, 26)
+                inputs = torch.cat((inputs, centers), dim=1) # (batch_size, 26)
+                # logger.debug(f"inputs shape: {inputs.shape}")
+                output = model(inputs) # output is (batch_size, 3, 3)
+                # logger.debug(f"output shape: {output.shape}")
                 L_elements = output
             else:
+                output = model(inputs)
                 centers, L_elements = output
 
 
