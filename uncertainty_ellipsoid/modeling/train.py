@@ -21,12 +21,12 @@ def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     task: str = "train_shape", # "train_center", "train_shape", "end2end"
     features_path: Path = PROCESSED_DATA_DIR / "test_features.h5",
-    model_path: Path = MODELS_DIR / "ellipsoid_shape_net_0403.pth", 
+    model_path: Path = MODELS_DIR / "ellipsoid_shape_net_0404_log.pth", 
     batch_size: int = 512,  # on one GPU
     num_workers: int = 8,
     device: str = "auto",  # auto-detect MPS, CUDA or CPU
     num_epochs: int = 100,
-    loss_weight: list[float] = [0,10000,1],  # center_loss, containment_loss, reg_loss
+    loss_weight: list[float] = [0,100,1],  # center_loss, containment_loss, reg_loss
     # -----------------------------------------
 ):
     """

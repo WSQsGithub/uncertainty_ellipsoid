@@ -61,8 +61,8 @@ class UncertaintyEllipsoidLoss(nn.Module):
         distances = torch.diagonal(distances, dim1=1, dim2=2) - 1  # Shape (N,M_S)
 
         # Containment loss: max(0, (x_ij - c_i)^T P_i (x_ij - c_i) - 1)
-        containment_losses = torch.mean(torch.sigmoid(distances * 1000), dim=1)  # Shape (N,)
-
+        # containment_losses = torch.mean(torch.sigmoid(distances * 1000), dim=1)  # Shape (N,)
+        containment_losses = torch.nn.functional.relu(distances) 
         # Average the loss across all samples
         containment_loss = containment_losses.mean()  # Scalar
         return containment_loss
@@ -91,7 +91,8 @@ class UncertaintyEllipsoidLoss(nn.Module):
         )
         det_L = l11 * l22 * l33
 
-        reg_loss = 1 / torch.abs(det_L)
+        # reg_loss = 1 / torch.abs(det_L)
+        reg_loss = torch.log(1 + 1 / torch.abs(det_L))
 
         return reg_loss.mean()
 

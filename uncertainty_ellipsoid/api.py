@@ -45,8 +45,8 @@ atexit.register(cleanup_resources)
 async def lifespan(app: FastAPI):
     """Lifespan context manager for FastAPI application"""
     # Startup
-    global model, device
-
+    # global model, device
+    global center_model, shape_model, device
     try:
         # Initialize device
         if torch.backends.mps.is_available():
@@ -59,9 +59,20 @@ async def lifespan(app: FastAPI):
         logger.info(f"Using device: {device}")
 
         # Load model
-        model_path = MODELS_DIR / "ellipsoid_net_top0_0219_142.pth"
-        model = safe_load_model(model_path, device)
-        model.eval()
+        # model_path = MODELS_DIR / "ellipsoid_net_top0_0219_142.pth"
+        # model = safe_load_model(model_path, device)
+        # model.eval()
+
+        # train_shape mode
+        center_model_path = MODELS_DIR / "ellipsoid_center_net_best.pth"
+        shape_model_path = MODELS_DIR / "ellipsoid_shape_net_best.pth"
+
+        center_model = safe_load_model(center_model_path, device, task="train_center")
+        shape_model = safe_load_model(shape_model_path, device, task="train_shape")
+
+        center_model.eval()
+        shape_model.eval()
+
         logger.info("Model loaded successfully")
 
         yield
@@ -175,15 +186,20 @@ async def predict(input_data: PredictionInput) -> PredictionOutput:
 
     # Make prediction
     with torch.no_grad():
-        centers, L_elements = model(feature)
+        # centers, L_elements = model(feature)
 
-        # Convert to numpy for response
-        center = centers[0].cpu().numpy().tolist()
-        L_matrix = L_elements[0].cpu().numpy().tolist()
+        # # Convert to numpy for response
+        # center = centers[0].cpu().numpy().tolist()
+        # L_matrix = L_elements[0].cpu().numpy().tolist()
 
-        # Replace NaN with 0.0 (or any other value)
-        center = np.nan_to_num(center, nan=0.0).tolist()
-        L_matrix = np.nan_to_num(L_matrix, nan=0.0).tolist()
+        # # Replace NaN with 0.0 (or any other value)
+        # center = np.nan_to_num(center, nan=0.0).tolist()
+        # L_matrix = np.nan_to_num(L_matrix, nan=0.0).tolist()
+        center = center_model(feature)
+        inputs = torch.cat((feature, center), dim=1)
+        L_matrix = shape_model(inputs)
+        center = center[0].cpu().numpy().tolist()
+        L_matrix = L_matrix[0].cpu().numpy().tolist()
 
     prediction_time = (time.perf_counter() - start_time) * 1000  # Convert to milliseconds
     logger.info(f"Prediction time: {prediction_time:.2f} ms")
